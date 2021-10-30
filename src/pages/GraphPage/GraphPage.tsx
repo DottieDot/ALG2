@@ -1,14 +1,42 @@
 import { TabContext, TabList } from '@mui/lab'
-import { Button, Container, Grid, Paper, Stack, Tab, Typography } from '@mui/material'
-import { Box } from '@mui/system'
+import { Box, Button, Container, Grid, Paper, Stack, Tab, Typography, styled } from '@mui/material'
 import { Field, Form, Formik, FormikErrors, FormikTouched } from 'formik'
 import { TextField } from 'formik-mui'
+import { Graphviz } from 'graphviz-react'
 import _ from 'lodash'
-import { FunctionComponent, useEffect, useState } from 'react'
+import { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import SwipeableViews, { SwipeableViewsHooks } from 'react-swipeable-views'
+import AutoSizer from 'react-virtualized-auto-sizer'
 import * as Yup from 'yup'
-import { AdjacencyMatrix, generateAdjacencyMatrix } from '../../algorithm'
+import { AdjacencyMatrix, generateAdjacencyMatrix, Graph } from '../../algorithm'
 import { AdjacencyMatrixTable } from '../../components'
+
+const StyledGraph = styled(Graphviz)(({ theme }) => ({
+  '.graph': {
+    '> polygon': {
+      fill: 'transparent'
+    },
+    '.node': {
+      '> *': {
+        stroke: theme.palette.text.primary
+      },
+      '> text': {
+        stroke: 'transparent'
+      }
+    },
+    '.edge': {
+      '> *': {
+        stroke: theme.palette.text.primary
+      },
+      '> polygon': {
+        fill: theme.palette.text.primary
+      }
+    },
+    'text': {
+      fill: theme.palette.text.primary
+    }
+  }
+}))
 
 interface FormFields {
   vertices: string
@@ -29,8 +57,9 @@ const GenerateGraphSchema = Yup.object().shape({
 const tabValues = ['matrix', 'graph']
 const GraphPage: FunctionComponent = () => {
   const [tab, setTab] = useState('matrix')
-  const [svHooks, setSvHooks] = useState<SwipeableViewsHooks>({ updateHeight: () => {} })
+  const [svHooks, setSvHooks] = useState<SwipeableViewsHooks>({ updateHeight: () => { } })
   const [adjacencyMatrix, setAdjacencyMatrix] = useState<AdjacencyMatrix | null>(null)
+  const graph = useMemo(() => adjacencyMatrix ? new Graph(adjacencyMatrix) : null, [adjacencyMatrix])
 
   useEffect(() => {
     svHooks.updateHeight()
@@ -119,12 +148,23 @@ const GraphPage: FunctionComponent = () => {
                 <TabList onChange={(_, v) => setTab(v)}>
                   <Tab label="Adjacency Matrix" value='matrix' />
                   <Tab label="Graph" value='graph' />
+                  <Box sx={{ flexGrow: 1 }} />
+                  {graph && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', pr: 3 }}>
+                      <Button color="secondary" onClick={() => {
+                        graph.connectDisconnectedGraphs()
+                        setAdjacencyMatrix(graph.toAdjacencyMatrix())
+                      }}>Make connected</Button>
+                    </Box>
+                  )}
                 </TabList>
               </Box>
-              <SwipeableViews 
+              <SwipeableViews
                 action={setSvHooks}
-                index={_.indexOf(tabValues, tab)} 
+                index={_.indexOf(tabValues, tab)}
                 animateHeight
+                disableLazyLoading
+                disabled
               >
                 <Paper sx={{ p: 0 }}>
                   {adjacencyMatrix && (
@@ -138,8 +178,23 @@ const GraphPage: FunctionComponent = () => {
                     </Paper>
                   )}
                 </Paper>
-                <Paper>
-                  Graph!
+                <Paper sx={{ height: 500, p: 3 }}>
+                  {graph && (
+                    <AutoSizer>
+                      {({ height, width }) => (
+                        <StyledGraph
+                          dot={graph.toDotString()}
+                          options={{
+                            useWorker: false,
+                            fit: true,
+                            zoom: false,
+                            width: width,
+                            height: height,
+                          }}
+                        />
+                      )}
+                    </AutoSizer>
+                  )}
                 </Paper>
               </SwipeableViews>
             </TabContext>

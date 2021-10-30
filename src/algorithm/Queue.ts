@@ -18,7 +18,7 @@ export default class Queue<T> {
 
   public static fromArray<T>(values: T[]): Queue<T> {
     const queue = new Queue<T>()
-    values.forEach(v => queue.enqueue)
+    values.forEach(v => queue.enqueue(v))
     return queue
   }
 
@@ -30,10 +30,14 @@ export default class Queue<T> {
     this._size += 1
 
     if (!this._back) {
-      this._front = this._back = new QueueNode(element)
+      this._front = new QueueNode(element)
+      this._back = this._front
+      return
     }
 
-    this._back.next = new QueueNode(element)
+    const node = new QueueNode(element)
+    this._back.next = node
+    this._back = node
   }
 
   /**
@@ -62,7 +66,7 @@ export default class Queue<T> {
   }
 
   public isEmpty(): boolean {
-    return !!this._size
+    return this._size === 0
   }
 
   public clear() {

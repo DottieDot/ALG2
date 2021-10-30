@@ -6,7 +6,7 @@ import { AdjacencyMatrix } from '../algorithm'
 
 const Table = styled('table')(({ theme }) => ({
   borderSpacing: 0,
-  '& tbody tr:nth-child(even)': {
+  '& tbody tr:nth-of-type(even)': {
     background: alpha(theme.palette.getContrastText(theme.palette.background.paper), .05)
   },
   '& td': {

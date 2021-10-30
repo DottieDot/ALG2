@@ -109,4 +109,24 @@ export default class Graph {
       return accumulator
     }, {})
   }
+
+  public toDotString(): string {
+    let result = 'graph {'
+
+    result += Object.values(this._vertices).map((vertex) => (
+      `"${vertex.id}";` + vertex.edges
+        .filter(e => (+e) > (+vertex.id)) // Hacky pls fix
+        .map(e => `"${vertex.id}" -- "${e}"`)
+        .join(';')
+    )).join('')
+
+    result += '}'
+
+    return result
+  }
+
+  public clone(): Graph {
+    // Not very fast, but very easy
+    return new Graph(this.toAdjacencyMatrix())
+  }
 }
