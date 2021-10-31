@@ -57,6 +57,8 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.14.176",
-    "@types/react-virtualized-auto-sizer": "^1.0.1"
+    "@types/react-virtualized-auto-sizer": "^1.0.1",
+    "@types/uuid": "^8.3.1",
+    "uuid": "^8.3.2"
   }
 }
