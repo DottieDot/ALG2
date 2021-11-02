@@ -3,14 +3,15 @@ import { Box, Button, Container, Grid, Paper, Tab, Typography } from '@mui/mater
 import _ from 'lodash'
 import { FunctionComponent, useEffect, useState } from 'react'
 import SwipeableViews, { SwipeableViewsHooks } from 'react-swipeable-views'
-import { AdjacencyMatrix, Graph } from '../../algorithm'
+import { AdjacencyMatrix, connectAdjacencyMatrix } from '../../algorithm'
 import AdjacencyMatrixDisplay from './AdjacencyMatrixDisplay'
 import GraphDisplay from './GraphDisplay'
 import InputForm from './InputForm'
+import VertexCover from './VertexCover'
 
 
 
-const tabValues = ['matrix', 'graph']
+const tabValues = ['matrix', 'graph', 'cover']
 const GraphPage: FunctionComponent = () => {
   const [tab, setTab] = useState('matrix')
   const [svHooks, setSvHooks] = useState<SwipeableViewsHooks>({ updateHeight: () => { } })
@@ -36,14 +37,12 @@ const GraphPage: FunctionComponent = () => {
                 <TabList onChange={(_, v) => setTab(v)}>
                   <Tab label="Adjacency Matrix" value='matrix' />
                   <Tab label="Graph" value='graph' />
+                  <Tab label="Vertex Cover" value='cover' />
                   <Box sx={{ flexGrow: 1 }} />
                   {adjacencyMatrix && (
                     <Box sx={{ display: 'flex', alignItems: 'center', pr: 3 }}>
                       <Button color="secondary" onClick={() => {
-                        // TODO: Fix this lol
-                        const graph = new Graph(adjacencyMatrix)
-                        graph.connectDisconnectedGraphs()
-                        setAdjacencyMatrix(graph.toAdjacencyMatrix())
+                        setAdjacencyMatrix(connectAdjacencyMatrix(adjacencyMatrix))
                       }}>Make connected</Button>
                     </Box>
                   )}
@@ -61,9 +60,14 @@ const GraphPage: FunctionComponent = () => {
                     <AdjacencyMatrixDisplay adjacencyMatrix={adjacencyMatrix} />
                   )}
                 </Paper>
-                <Paper sx={{ height: 500, p: 3 }}>
+                <Paper sx={{ p: 3 }}>
                   {adjacencyMatrix && (
                     <GraphDisplay adjacencyMatrix={adjacencyMatrix} />
+                  )}
+                </Paper>
+                <Paper>
+                  {adjacencyMatrix && (
+                    <VertexCover adjacencyMatrix={adjacencyMatrix} />
                   )}
                 </Paper>
               </SwipeableViews>

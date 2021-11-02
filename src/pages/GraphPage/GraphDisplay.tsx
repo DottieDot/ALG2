@@ -1,7 +1,7 @@
-import { styled } from '@mui/material'
+import { Box, styled } from '@mui/material'
 import Graphviz from 'graphviz-react'
 import { FunctionComponent, memo, useMemo } from 'react'
-import { AdjacencyMatrix, Graph } from '../../algorithm'
+import { AdjacencyMatrix, dotStringFromAdjacencyMatrix } from '../../algorithm'
 import AutoSizer from 'react-virtualized-auto-sizer'
 
 interface Props {
@@ -36,23 +36,25 @@ const StyledGraph = styled(Graphviz)(({ theme }) => ({
 }))
 
 const GraphDisplay: FunctionComponent<Props> = ({ adjacencyMatrix }) => {
-  const graph = useMemo(() => new Graph(adjacencyMatrix), [adjacencyMatrix])
+  const dotString = useMemo(() => dotStringFromAdjacencyMatrix(adjacencyMatrix), [adjacencyMatrix])
 
   return (
-    <AutoSizer>
-      {({ height, width }) => (
-        <StyledGraph
-          dot={graph.toDotString()}
-          options={{
-            useWorker: false,
-            fit: true,
-            zoom: false,
-            width: width,
-            height: height,
-          }}
-        />
-      )}
-    </AutoSizer>
+    <Box sx={{ height: 500 }}>
+      <AutoSizer>
+        {({ height, width }) => (
+          <StyledGraph
+            dot={dotString}
+            options={{
+              useWorker: true,
+              fit: true,
+              zoom: false,
+              width: width,
+              height: height,
+            }}
+          />
+        )}
+      </AutoSizer>
+    </Box>
   )
 }
 export default memo(GraphDisplay)

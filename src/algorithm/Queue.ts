@@ -16,6 +16,11 @@ export default class Queue<T> {
   private _back : QueueNode<T> | null = null
   private _size : number              = 0
 
+  /**
+   * Creates a new queue from an array
+   * @param values 
+   * @returns 
+   */
   public static fromArray<T>(values: T[]): Queue<T> {
     const queue = new Queue<T>()
     values.forEach(v => queue.enqueue(v))
@@ -23,7 +28,7 @@ export default class Queue<T> {
   }
 
   /**
-   * Adds a value to the queue
+   * Adds an element to the queue
    * @param element 
    */
   public enqueue(element: T) {
@@ -41,8 +46,8 @@ export default class Queue<T> {
   }
 
   /**
-   * Returns the first value and removes it
-   * @returns the first value
+   * Returns the first element and removes it
+   * @returns the first element
    */
   public dequeue(): T | undefined {
     this._size -= 1
@@ -57,18 +62,33 @@ export default class Queue<T> {
     return value
   }
 
+  /**
+   * Returns the first element
+   * @returns the first element
+   */
   public front(): T | undefined {
     return this._front?.value
   }
 
+  /**
+   * Returns the last element
+   * @returns te last element
+   */
   public back(): T | undefined {
     return this._back?.value
   }
 
+  /**
+   * Checks if the queue is empty
+   * @returns true if empty
+   */
   public isEmpty(): boolean {
     return this._size === 0
   }
 
+  /**
+   * Removes all elements from the queue
+   */
   public clear() {
     this._front = this._back = null
     this._size = 0
