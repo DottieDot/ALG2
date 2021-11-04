@@ -165,40 +165,33 @@ const yieldTick = () => {
 }
 
 const isAdjacencyMatrixCovered = (matrix: AdjacencyMatrix, cover: Set<string>): boolean => {
-  const keys         = Object.keys(matrix)
-  let   totalEdges   = 0
-  let   edgesCovered = 0
+  const keys = Object.keys(matrix)
 
   for (let i = 0; i < keys.length; ++i) {
     for (let j = 0; j < i; ++j) {
       const isEdge = matrix[keys[i]][keys[j]]
 
-      if (!isEdge) {
-        continue
-      }
-
-      totalEdges += 1
-      if (cover.has(keys[i]) || cover.has(keys[j])) {
-        edgesCovered += 1
+      if (isEdge && !cover.has(keys[i]) && !cover.has(keys[j])) {
+        return false
       }
     }
   }
 
-  return edgesCovered === totalEdges 
+  return true
 }
 
 const getVertexCoverForAdjacencyMatrixInternal = async (
-  matrix           : AdjacencyMatrix, 
-  k                : number, 
-  progressCallback : (p: number) => void, 
-  cancellationToken: CancellationToken, 
-  keys             : string[] = Object.keys(matrix), 
-  cover            : Set<string> = new Set<string>(),
-  i                : number = 0,
-  count            : number = 0
+  matrix            : AdjacencyMatrix, 
+  k                 : number, 
+  progressCallback ?: (p: number) => void, 
+  cancellationToken?: CancellationToken, 
+  keys              : string[] = Object.keys(matrix), 
+  cover             : Set<string> = new Set<string>(),
+  i                 : number = 0,
+  count             : number = 0
 ): Promise<Set<string>|null> => {
 
-  cancellationToken.throwIfCancelled()
+  cancellationToken?.throwIfCancelled()
 
   const totalCombinations = 2 ** keys.length
 
@@ -212,9 +205,9 @@ const getVertexCoverForAdjacencyMatrixInternal = async (
     return null
   }
 
-  if (!(count % 1000)) {
+  if (!(count % 200)) {
     await yieldTick()
-    progressCallback(count / totalCombinations)
+    progressCallback && progressCallback(count / totalCombinations)
   }
 
   const newCover = new Set<string>(cover).add(keys[i])
@@ -239,10 +232,10 @@ const getVertexCoverForAdjacencyMatrixInternal = async (
  * @param cancellationToken allows the cancellation of the algorithm
  */
 export const getVertexCoverForAdjacencyMatrix = (  
-  matrix           : AdjacencyMatrix, 
-  k                : number, 
-  progressCallback : (p: number) => void, 
-  cancellationToken: CancellationToken
+  matrix            : AdjacencyMatrix, 
+  k                 : number, 
+  progressCallback ?: (p: number) => void, 
+  cancellationToken?: CancellationToken
 ) => {
   return getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, cancellationToken)
 }
