@@ -1,9 +1,9 @@
 import { styled } from '@mui/material'
-import Graphviz from 'graphviz-react'
+import { GraphViz } from '../../components'
 import { FunctionComponent, memo } from 'react'
 import AutoSizer from 'react-virtualized-auto-sizer'
 
-const StyledGraphComponent = styled(Graphviz)(({ theme }) => ({
+const StyledGraphComponent = styled(GraphViz)(({ theme }) => ({
   '.graph': {
     '> polygon': {
       fill: 'transparent'

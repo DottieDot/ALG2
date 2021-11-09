@@ -89,9 +89,9 @@ describe('generateAdjacencyMatrix', () => {
   })
 
   it('generates the correct amount of edges', () => {
-    const matrix = generateAdjacencyMatrix(10, 0.5)
+    const matrix = generateAdjacencyMatrix(10, 1)
 
-    const expectedEdges = Math.round((10 * 9) / 2 * 0.5)
+    const expectedEdges = 10 * 9 / 2
 
     expect(countEdges(matrix)).toBe(expectedEdges)
   })
