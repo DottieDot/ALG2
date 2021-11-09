@@ -1,5 +1,4 @@
 import { Theme } from '@mui/material'
-import CancellationToken from 'cancellationtoken'
 import _ from 'lodash'
 import Queue from './Queue'
 
@@ -157,13 +156,6 @@ export const dotStringFromAdjacencyMatrix = (matrix: AdjacencyMatrix): string =>
   return result
 }
 
-// Turns out this will still freeze the UI thread??
-const yieldTick = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(0), 500)
-  })
-}
-
 const isAdjacencyMatrixCovered = (matrix: AdjacencyMatrix, cover: Set<string>): boolean => {
   const keys = Object.keys(matrix)
 
@@ -180,48 +172,56 @@ const isAdjacencyMatrixCovered = (matrix: AdjacencyMatrix, cover: Set<string>): 
   return true
 }
 
-const getVertexCoverForAdjacencyMatrixInternal = async (
+const factorial = (n: number): bigint => {
+  let result = 1n
+  for (let i = BigInt(n); i >= 1n; --i) {
+    result *= i
+  }
+  return result
+}
+
+const combinations = (n: number, r: number): number => {
+  let result = factorial(n) / (factorial(n - r) * factorial(r))
+  return +result.toString()
+}
+
+const getVertexCoverForAdjacencyMatrixInternal = (
   matrix            : AdjacencyMatrix, 
   k                 : number, 
   progressCallback ?: (p: number) => void, 
-  cancellationToken?: CancellationToken, 
   keys              : string[] = Object.keys(matrix), 
   cover             : Set<string> = new Set<string>(),
   i                 : number = 0,
-  count             : number = 0
-): Promise<Set<string>|null> => {
+  count             : number = 0,
+  totalCombinations : number = combinations(keys.length, k)
+): [Set<string> | null, number] => {
 
-  cancellationToken?.throwIfCancelled()
-
-  const totalCombinations = 2 ** keys.length
-
-  if (k === cover.size) {
-    return isAdjacencyMatrixCovered(matrix, cover) 
-      ? cover
-      : null
-  }
-
-  if (k > keys.length || i >= keys.length) {
-    return null
-  }
-
-  if (!(count % 200)) {
-    await yieldTick()
+  if (!(count % Math.round(totalCombinations / 100))) {
     progressCallback && progressCallback(count / totalCombinations)
   }
 
-  const newCover = new Set<string>(cover).add(keys[i])
-  const a = await getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, cancellationToken, keys, newCover, i + 1, count + 1)
-  if (a !== null) {
-    return a
-  }
-  let adjustedCount = Math.floor((totalCombinations - count) / 2)
-  const b = await getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, cancellationToken, keys, cover, i + 1, count + adjustedCount)
-  if (b !== null) {
-    return b
+  if (k === cover.size) {
+    return isAdjacencyMatrixCovered(matrix, cover) 
+      ? [cover, count + 1]
+      : [null, count + 1]
   }
 
-  return null
+  if (k > keys.length || i >= keys.length) {
+    return [null, count]
+  }
+
+  const newCover = new Set<string>(cover).add(keys[i])
+  const [a, c1] = getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, keys, newCover, i + 1, count, totalCombinations)
+  if (a !== null) {
+    return [a, c1]
+  }
+  
+  const [b, c2] = getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, keys, cover, i + 1, c1, totalCombinations)
+  if (b !== null) {
+    return [b, c2]
+  }
+
+  return [null, c2]
 }
 
 /**
@@ -235,7 +235,6 @@ export const getVertexCoverForAdjacencyMatrix = (
   matrix            : AdjacencyMatrix, 
   k                 : number, 
   progressCallback ?: (p: number) => void, 
-  cancellationToken?: CancellationToken
-) => {
-  return getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, cancellationToken)
+): Set<string> | null => {
+  return getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback)[0]
 }

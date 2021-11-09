@@ -67,7 +67,7 @@ const GraphPage: FunctionComponent = () => {
                 </Paper>
                 <Paper>
                   {adjacencyMatrix && (
-                    <VertexCover adjacencyMatrix={adjacencyMatrix} />
+                    <VertexCover adjacencyMatrix={adjacencyMatrix} updateLayout={svHooks.updateHeight} />
                   )}
                 </Paper>
               </SwipeableViews>

@@ -106,7 +106,7 @@ describe('getVertexCoverForAdjacencyMatrix', () => {
       'd': { 'a': false, 'b': false, 'c': true , 'd': false }
     }
 
-    const cover = await getVertexCoverForAdjacencyMatrix(matrix, 2)
+    const cover = getVertexCoverForAdjacencyMatrix(matrix, 2)
 
     expect(cover).toEqual(new Set(['a','c']))
   })
@@ -119,7 +119,7 @@ describe('getVertexCoverForAdjacencyMatrix', () => {
       'd': { 'a': false, 'b': false, 'c': true , 'd': false }
     }
 
-    const cover = await getVertexCoverForAdjacencyMatrix(matrix, 3)
+    const cover = getVertexCoverForAdjacencyMatrix(matrix, 3)
 
     expect(cover).toEqual(new Set(['a', 'b', 'c']))
   })
@@ -132,7 +132,7 @@ describe('getVertexCoverForAdjacencyMatrix', () => {
       'd': { 'a': false, 'b': false, 'c': true , 'd': false }
     }
 
-    const cover = await getVertexCoverForAdjacencyMatrix(matrix, 1)
+    const cover = getVertexCoverForAdjacencyMatrix(matrix, 1)
 
     expect(cover).toBe(null)
   })
@@ -145,7 +145,7 @@ describe('getVertexCoverForAdjacencyMatrix', () => {
       'd': { 'a': false, 'b': false, 'c': true , 'd': false }
     }
 
-    const cover = await getVertexCoverForAdjacencyMatrix(matrix, 5)
+    const cover = getVertexCoverForAdjacencyMatrix(matrix, 5)
 
     expect(cover).toBe(null)
   })
