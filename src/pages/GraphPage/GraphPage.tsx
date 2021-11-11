@@ -9,8 +9,6 @@ import GraphDisplay from './GraphDisplay'
 import InputForm from './InputForm'
 import VertexCover from './VertexCover'
 
-
-
 const tabValues = ['matrix', 'graph', 'cover']
 const GraphPage: FunctionComponent = () => {
   const [tab, setTab] = useState('matrix')

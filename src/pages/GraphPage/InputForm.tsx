@@ -1,9 +1,10 @@
 import { Button, Grid, Stack } from '@mui/material'
 import { Field, Form, Formik, FormikErrors, FormikTouched } from 'formik'
 import { TextField } from 'formik-mui'
-import { FunctionComponent, memo } from 'react'
+import { FunctionComponent, memo, useEffect, useState } from 'react'
 import * as Yup from 'yup'
-import { AdjacencyMatrix, generateAdjacencyMatrix } from '../../algorithm'
+import { AdjacencyMatrix } from '../../algorithm'
+import { GenerateAdjacencyMatrixWorker, startGenerateAdjacencyMatrixWork, GENERATE_ADJACENCY_MATRIX_WORK_FINISHED } from '../../workers'
 
 interface Props {
   setAdjacencyMatrix: (adjacencyMatrix: AdjacencyMatrix) => void
@@ -26,6 +27,14 @@ const GenerateGraphSchema = Yup.object().shape({
 })
 
 const InputForm: FunctionComponent<Props> = ({ setAdjacencyMatrix }) => {
+  const [worker, setWorker] = useState<GenerateAdjacencyMatrixWorker | null>(null)
+
+  useEffect(() => {
+    return () => {
+      worker?.terminate()
+    }
+  }, [worker])
+
   const errorProps = (name: keyof FormikErrors<FormFields>, errors: FormikErrors<FormFields>, touched: FormikTouched<FormFields>) => {
     if (errors[name] && touched[name]) {
       return {
@@ -46,10 +55,19 @@ const InputForm: FunctionComponent<Props> = ({ setAdjacencyMatrix }) => {
       }}
       validationSchema={GenerateGraphSchema}
       onSubmit={(values, { setSubmitting }) => {
-        const matrix = generateAdjacencyMatrix(+values.vertices, +values.density)
-        setAdjacencyMatrix(matrix)
+        const worker = new GenerateAdjacencyMatrixWorker()
+        worker.postMessage(startGenerateAdjacencyMatrixWork(
+          +values.vertices,
+          +values.density
+        ))
+        worker.onMessage = (({ data }) => {
+          if (data.type === GENERATE_ADJACENCY_MATRIX_WORK_FINISHED) {
+            setAdjacencyMatrix(data.adjacencyMatrix)
+            setSubmitting(false)
+          }
+        })
 
-        setSubmitting(false)
+        setWorker(worker)
       }}
       validateOnMount
     >

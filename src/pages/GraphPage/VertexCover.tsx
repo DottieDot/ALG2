@@ -10,7 +10,6 @@ interface Props {
   updateLayout: () => void
 }
 
-
 const VertexCover: FunctionComponent<Props> = ({ adjacencyMatrix, updateLayout }) => {
   const theme = useTheme()
   const [progress, setProgress] = useState(0)

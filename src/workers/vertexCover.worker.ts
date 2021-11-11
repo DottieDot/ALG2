@@ -42,5 +42,6 @@ ctx.onmessage = ({ data }: MessageEvent<VertexCoverWorkerIngoing>) => {
         type: VERTEX_COVER_FINISHED,
         cover: cover
       })
+      break
   }
 }
