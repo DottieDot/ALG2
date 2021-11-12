@@ -1,10 +1,17 @@
-import { createTheme, CssBaseline, ThemeProvider } from '@mui/material'
+import { createTheme, CssBaseline, darkScrollbar, ThemeProvider } from '@mui/material'
 import { FunctionComponent } from 'react'
 import { GraphPage } from './pages'
 
 const theme = createTheme({
   palette: {
     mode: 'dark'
+  },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: darkScrollbar()
+      }
+    }
   }
 })
 

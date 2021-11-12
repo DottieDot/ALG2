@@ -1,8 +1,7 @@
 import { Box, Fade, LinearProgress, TextField, Typography, useTheme } from '@mui/material'
 import { FunctionComponent, memo, useEffect, useState } from 'react'
-import VertexCoverWorker from 'worker-loader!./../../workers/vertexCover.worker.ts'
 import { AdjacencyMatrix, dotStringFromAdjacencyMatrixWithCover } from '../../algorithm'
-import { START_VERTEX_COVER_WORK, VERTEX_COVER_FINISHED, VERTEX_COVER_PROGRESS_UPDATE } from '../../workers/vertexCover.worker'
+import { VertexCoverWorker, START_VERTEX_COVER_WORK, VERTEX_COVER_FINISHED, VERTEX_COVER_PROGRESS_UPDATE } from '../../workers'
 import Graph from './Graph'
 
 interface Props {
@@ -20,15 +19,15 @@ const VertexCover: FunctionComponent<Props> = ({ adjacencyMatrix, updateLayout }
     const worker = new VertexCoverWorker()
 
     setProgress(0)
-    worker.onmessage = ({ data }) => {
+    worker.onMessage = ({ data }) => {
       switch (data.type) {
         case VERTEX_COVER_PROGRESS_UPDATE:
           setProgress(data.progress)
           break
         case VERTEX_COVER_FINISHED:
           setProgress(1)
-          if (data.cover) {
-            setDotString(dotStringFromAdjacencyMatrixWithCover(adjacencyMatrix, data.cover, theme))
+          if (data.result) {
+            setDotString(dotStringFromAdjacencyMatrixWithCover(adjacencyMatrix, data.result, theme))
           }
           else {
             setDotString('')
