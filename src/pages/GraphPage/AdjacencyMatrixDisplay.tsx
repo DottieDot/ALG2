@@ -5,16 +5,19 @@ import { AdjacencyMatrixTable } from '../../components'
 
 interface Props {
   adjacencyMatrix: AdjacencyMatrix
+  setAdjacencyMatrix: (adjacencyMatrix: AdjacencyMatrix) => void
 }
 
-const AdjacencyMatrixDisplay: FunctionComponent<Props> = ({ adjacencyMatrix }) => {
+const AdjacencyMatrixDisplay: FunctionComponent<Props> = ({ adjacencyMatrix, setAdjacencyMatrix }) => {
   return (
-    <Paper sx={{ maxHeight: 500, overflow: 'auto', bgcolor: 'transparent' }} variant="outlined">
+    <Paper sx={{ bgcolor: 'transparent' }} variant="outlined">
       <AdjacencyMatrixTable
         sx={{
-          width: '100%'
+          width: '100%',
+          maxHeight: 500
         }}
         adjacencyMatrix={adjacencyMatrix}
+        onChange={setAdjacencyMatrix}
       />
     </Paper>
   )

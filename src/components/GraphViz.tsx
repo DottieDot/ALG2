@@ -1,5 +1,7 @@
-import { FunctionComponent, memo, useEffect, useMemo } from 'react'
+import { CircularProgress, Typography } from '@mui/material'
+import { Box } from '@mui/system'
 import { graphviz, GraphvizOptions } from 'd3-graphviz'
+import { Fragment, FunctionComponent, memo, useEffect, useMemo, useState } from 'react'
 
 export interface GraphVizProps {
   dot       : string
@@ -9,20 +11,52 @@ export interface GraphVizProps {
 
 let graphs = 0
 const GraphViz: FunctionComponent<GraphVizProps> = ({ dot, options, className }) => {
+  const [loading, setLoading] = useState(false)
   const id = useMemo(() => `graphviz-${++graphs}`, [])
 
   useEffect(() => {
-    graphviz(`#${id}`)
+    setLoading(true)
+    const viz = graphviz(`#${id}`)
       .options({
         engine: 'dot',
-        totalMemory: 1024 * 1024 * 100,
+        useWorker: true,
+        totalMemory: 1024 * 1024 * 256, // 256 MiB
         ...options
       })
-      .renderDot(dot)
+      .renderDot(dot, () => {
+        setLoading(false)
+      })
+
+    return () => {
+      // d3-graphiz only has typescript bindings for 2.6.7
+      // @ts-ignore
+      viz.destroy()
+    }
   }, [id, dot, options])
 
   return (
-    <div id={id} className={className} />
+    <Fragment>
+      {loading && (
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            width: options.width,
+            height: options.height,
+            flexDirection: 'column'
+          }}
+        >
+          <Typography variant="body1" sx={{ mb: 2 }}>Rendering Graph</Typography>
+          <CircularProgress />
+        </Box>
+      )}
+      <Box 
+        sx={{ display: loading ? 'none' : 'initial' }}
+        id={id} 
+        className={className} 
+      />
+    </Fragment>
   )
 }
 export default memo(GraphViz)

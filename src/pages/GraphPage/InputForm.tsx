@@ -1,10 +1,11 @@
-import { Button, Grid, Stack } from '@mui/material'
+import { Grid, Stack } from '@mui/material'
 import { Field, Form, Formik, FormikErrors, FormikTouched } from 'formik'
 import { TextField } from 'formik-mui'
-import { FunctionComponent, memo, useEffect, useState } from 'react'
+import { FunctionComponent, memo, useEffect, useMemo } from 'react'
 import * as Yup from 'yup'
 import { AdjacencyMatrix } from '../../algorithm'
-import { GenerateAdjacencyMatrixWorker, startGenerateAdjacencyMatrixWork, GENERATE_ADJACENCY_MATRIX_WORK_FINISHED } from '../../workers'
+import { XButton } from '../../components'
+import { GenerateAdjacencyMatrixWorker, GENERATE_ADJACENCY_MATRIX_WORK_FINISHED, startGenerateAdjacencyMatrixWork } from '../../workers'
 
 interface Props {
   setAdjacencyMatrix: (adjacencyMatrix: AdjacencyMatrix) => void
@@ -27,7 +28,7 @@ const GenerateGraphSchema = Yup.object().shape({
 })
 
 const InputForm: FunctionComponent<Props> = ({ setAdjacencyMatrix }) => {
-  const [worker, setWorker] = useState<GenerateAdjacencyMatrixWorker | null>(null)
+  const worker = useMemo(() => new GenerateAdjacencyMatrixWorker(), [])
 
   useEffect(() => {
     return () => {
@@ -55,7 +56,6 @@ const InputForm: FunctionComponent<Props> = ({ setAdjacencyMatrix }) => {
       }}
       validationSchema={GenerateGraphSchema}
       onSubmit={(values, { setSubmitting }) => {
-        const worker = new GenerateAdjacencyMatrixWorker()
         worker.postMessage(startGenerateAdjacencyMatrixWork(
           +values.vertices,
           +values.density
@@ -66,13 +66,16 @@ const InputForm: FunctionComponent<Props> = ({ setAdjacencyMatrix }) => {
             setSubmitting(false)
           }
         })
-
-        setWorker(worker)
       }}
       validateOnMount
     >
       {({ submitForm, touched, errors, isSubmitting, isValid }) => (
-        <Form>
+        <Form 
+          onSubmit={(e) => {
+            e.preventDefault()
+            submitForm()
+          }}
+        >
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
               <Field
@@ -98,15 +101,25 @@ const InputForm: FunctionComponent<Props> = ({ setAdjacencyMatrix }) => {
               />
             </Grid>
             <Grid item xs={12}>
-              <Stack direction="row" justifyContent="flex-end">
-                <Button
+              <Stack direction="row" justifyContent="flex-end" spacing={2}>
+                <XButton
                   variant="contained"
+                  type="submit"
+                  color="secondary"
                   sx={{ width: 'fit-content' }}
-                  disabled={isSubmitting || !isValid}
-                  onClick={submitForm}
+                  disabled
+                >
+                  Import Graph
+                </XButton>
+                <XButton
+                  variant="contained"
+                  type="submit"
+                  sx={{ width: 'fit-content' }}
+                  processing={isSubmitting}
+                  disabled={!isValid}
                 >
                   Generate Graph
-                </Button>
+                </XButton>
               </Stack>
             </Grid>
           </Grid>

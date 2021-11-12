@@ -1,85 +1,121 @@
-import { Clear as CrossIcon } from '@mui/icons-material'
-import { alpha, styled } from '@mui/material'
+import { Box, Checkbox, styled, Typography, useTheme } from '@mui/material'
 import { SxProps } from '@mui/system'
-import { FunctionComponent, memo, useMemo, useState } from 'react'
+import { FunctionComponent, memo, useEffect, useMemo, useRef, useState } from 'react'
+import { GridCellProps, MultiGrid } from 'react-virtualized'
+import AutoSizer from 'react-virtualized-auto-sizer'
 import { AdjacencyMatrix } from '../algorithm'
 
-const Table = styled('table')(({ theme }) => ({
-  borderSpacing: 0,
-  '& tbody tr:nth-of-type(even)': {
-    background: alpha(theme.palette.getContrastText(theme.palette.background.paper), .05)
-  },
-  '& td': {
-    textAlign: 'center'
-  }
-}))
-
-// (props: PaperProps<'th'>) => <Paper {...props} component="th" />
-const TableHeader = styled('th')(({ theme }) => ({
-  padding: theme.spacing(2),
+const Header = styled(Typography)(({ theme }) => ({
   borderRadius: 0,
-  position: 'sticky',
   backgroundColor: theme.palette.background.paper,
-  'tbody > tr:hover > &, &.hover': {
-    backgroundColor: theme.palette.primary.main,
+  textAlign: 'center',
+  lineHeight: '48px',
+  '&.hover': {
+    background: theme.palette.primary.main,
     color: theme.palette.primary.contrastText
   },
-  'thead > tr > &:first-of-type': {
-    position: 'sticky',
-    zIndex: 2,
-    top: 0,
-    left: 0
-  },
-  'thead > tr > &:not(:first-of-type)': {
-    borderBottom: `1px solid ${theme.palette.divider}`,
-    zIndex: 1,
-    top: 0
-  },
-  'tbody > tr > &': {
-    borderRight: `1px solid ${theme.palette.divider}`,
-    left: 0,
-  }
+  transition: 'all linear 100ms'
+}))
+
+const RowHeader = styled(Header)(({ theme }) => ({
+  borderRight: `1px solid ${theme.palette.divider}`
+}))
+
+const ColumnHeader = styled(Header)(({ theme }) => ({
+  borderBottom: `1px solid ${theme.palette.divider}`
 }))
 
 export interface AdjacencyMatrixTableProps {
   adjacencyMatrix: AdjacencyMatrix,
-  sx?: SxProps
+  sx?: SxProps,
+  onChange: (newMatrix: AdjacencyMatrix) => void
 }
 
-const AdjacencyMatrixTable: FunctionComponent<AdjacencyMatrixTableProps> = ({ adjacencyMatrix, sx }) => {
-  const [hoveredColumn, setHoveredColumn] = useState<string | null>(null)
+// Please don't look too much at this code :/
+const AdjacencyMatrixTable: FunctionComponent<AdjacencyMatrixTableProps> = ({ adjacencyMatrix, sx, onChange }) => {
+  const theme = useTheme()
+  const [hover, setHover] = useState<number[]>([])
   const keys = useMemo(() => Object.keys(adjacencyMatrix), [adjacencyMatrix])
+  const gridRef = useRef<MultiGrid>(null)
+
+  useEffect(() => {
+    gridRef.current?.forceUpdateGrids()
+  }, [hover, adjacencyMatrix, gridRef])
+
+  const cellRender = ({ key, style, rowIndex, columnIndex }: GridCellProps) => {
+    const onHover = () => setHover([columnIndex, rowIndex])
+
+    if (rowIndex === 0 && columnIndex === 0) {
+      return <Header style={style} key={key} />
+    }
+    
+    if (columnIndex === 0) {
+      const hovered = rowIndex === hover[1]
+      return (
+        <RowHeader className={hovered ? 'hover' : ''} style={style} key={key}>
+          {keys[Math.max(rowIndex, columnIndex) - 1]}
+        </RowHeader>
+      )
+    }
+
+    if (rowIndex === 0) {
+      const hovered = columnIndex === hover[0]
+      return (
+        <ColumnHeader className={hovered ? 'hover' : ''} style={style} key={key}>
+          {keys[Math.max(rowIndex, columnIndex) - 1]}
+        </ColumnHeader>
+      )
+    }
+
+    if (rowIndex === columnIndex) {
+      return <div key={key} style={style} onMouseEnter={onHover}></div>
+    }
+
+    return (
+      <Checkbox
+        onMouseEnter={onHover}
+        style={style}
+        key={key}
+        checked={adjacencyMatrix[keys[rowIndex - 1]][keys[columnIndex - 1]]}
+        onChange={(e) => {
+          const copy = { ...adjacencyMatrix }
+          copy[keys[rowIndex    - 1]][keys[columnIndex - 1]] = e.target.checked
+          copy[keys[columnIndex - 1]][keys[rowIndex    - 1]] = e.target.checked
+          onChange(copy)
+        }}
+        disableRipple
+      />
+    )
+  }
 
   return (
-    <Table cellSpacing={0} sx={sx}>
-      <thead>
-        <tr>
-          <TableHeader>{' '}</TableHeader>
-          {keys.map(key => (
-            <TableHeader
-              className={key === hoveredColumn ? 'hover' : ''}
-              key={key}
-            >
-              {key}
-            </TableHeader>
-          ))}
-          <TableHeader sx={{ width: '100%' }}>{' '}</TableHeader>
-        </tr>
-      </thead>
-      <tbody onMouseLeave={() => setHoveredColumn(null)}>
-        {keys.map(row => (
-          <tr key={row}>
-            <TableHeader>{row}</TableHeader>
-            {keys.map(column => (
-              <td key={column} onMouseEnter={() => setHoveredColumn(column)}>
-                {adjacencyMatrix[row][column] && <CrossIcon />}
-              </td>
-            ))}
-            <td style={{ width: '100%' }} />
-          </tr>
-        ))}
-      </tbody>
-    </Table>
+    <Box sx={{
+      height: (keys.length + 1) * 48,
+      ...sx
+    }}>
+      <AutoSizer>
+        {({ width, height }) => (
+          <MultiGrid
+            ref={gridRef}
+            cellRenderer={cellRender}
+            columnWidth={48}
+            rowHeight={48}
+            height={height}
+            width={width}
+            rowCount={keys.length + 1}
+            columnCount={keys.length + 1}
+            fixedColumnCount={1}
+            fixedRowCount={1}
+            enableFixedRowScroll={false}
+            enableFixedColumnScroll={false}
+            styleTopRightGrid={{
+              background: theme.palette.background.paper,
+              borderBottom: `1px solid ${theme.palette.divider}`
+            }}
+          />
+        )}
+      </AutoSizer>
+    </Box>
   )
 }
 export default memo(AdjacencyMatrixTable)

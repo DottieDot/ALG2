@@ -9,7 +9,10 @@ const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        body: darkScrollbar()
+        body: {
+          overflowY: 'scroll', // Layout changes are expensive
+          ...darkScrollbar()
+        }
       }
     }
   }

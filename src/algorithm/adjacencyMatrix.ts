@@ -56,8 +56,8 @@ export const generateAdjacencyMatrix = (nVertices: number, density: number): Adj
     if (!matrix[i]) {
       matrix[i] = {}
     }
-    for (let j = 0; j < i; ++j) {
-      if (Math.random() < density) {
+    for (let j = 0; j <= i; ++j) {
+      if (j !== i && Math.random() < density) {
         matrix[i][j] = true
 
         if (!matrix[j]) {
@@ -66,7 +66,7 @@ export const generateAdjacencyMatrix = (nVertices: number, density: number): Adj
         matrix[j][i] = true
       }
       else {
-        matrix[i][j] = matrix[i][j] ?? false
+        matrix[i][j] = matrix[j][i] = false
       }
     }
   }
@@ -168,7 +168,11 @@ const getVertexCoverForAdjacencyMatrixInternal = (
       : [null, count + 1]
   }
 
-  if (k > keys.length || i >= keys.length) {
+  if ((cover.size + (keys.length - i) < k) || (k > keys.length)) {
+    return [null, count]
+  }
+
+  if (i >= keys.length) {
     return [null, count + 1]
   }
 

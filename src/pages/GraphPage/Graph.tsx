@@ -37,7 +37,7 @@ const Graph: FunctionComponent<{ dotString: string }> = ({ dotString }) => {
         <StyledGraphComponent
           dot={dotString}
           options={{
-            useWorker: false,
+            useWorker: true,
             fit: true,
             zoom: false,
             width: width,
