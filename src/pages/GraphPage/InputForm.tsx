@@ -104,7 +104,6 @@ const InputForm: FunctionComponent<Props> = ({ setAdjacencyMatrix }) => {
               <Stack direction="row" justifyContent="flex-end" spacing={2}>
                 <XButton
                   variant="contained"
-                  type="submit"
                   color="secondary"
                   sx={{ width: 'fit-content' }}
                   disabled
