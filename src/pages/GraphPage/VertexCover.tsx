@@ -13,9 +13,13 @@ const VertexCover: FunctionComponent<Props> = ({ adjacencyMatrix, updateLayout }
   const theme = useTheme()
   const [progress, setProgress] = useState(0)
   const [dotString, setDotString] = useState<string | null>(null)
-  const [k, setK] = useState('2')
+  const [k, setK] = useState('')
 
   useEffect(() => {
+    if (Number.isNaN(+k)) {
+      return
+    }
+
     const worker = new VertexCoverWorker()
 
     setProgress(0)
@@ -75,6 +79,9 @@ const VertexCover: FunctionComponent<Props> = ({ adjacencyMatrix, updateLayout }
         placeholder="10"
         value={k}
         onChange={e => setK(e.target.value)}
+        inputProps={{
+          min: 1
+        }}
         required
         fullWidth
       />

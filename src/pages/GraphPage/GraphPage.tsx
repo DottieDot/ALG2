@@ -10,9 +10,10 @@ import { connectSubgraphsAsync } from '../../workers'
 import AdjacencyMatrixDisplay from './AdjacencyMatrixDisplay'
 import GraphDisplay from './GraphDisplay'
 import InputForm from './InputForm'
+import Kernelization from './Kernelization'
 import VertexCover from './VertexCover'
 
-const tabValues = ['matrix', 'graph', 'cover']
+const tabValues = ['matrix', 'graph', 'cover', 'kernelization']
 const GraphPage: FunctionComponent = () => {
   const [tab, setTab] = useState('matrix')
   const [svHooks, setSvHooks] = useState<SwipeableViewsHooks>({ updateHeight: () => { } })
@@ -51,6 +52,7 @@ const GraphPage: FunctionComponent = () => {
                     <Tab label="Adjacency Matrix" value='matrix' />
                     <Tab label="Graph" value='graph' />
                     <Tab label="Vertex Cover" value='cover' />
+                    <Tab label="Kernelization" value='kernelization' />
                     <Box sx={{ flexGrow: 1 }} />
                     {adjacencyMatrix && (
                       <Box sx={{ display: 'flex', alignItems: 'center', pr: 3 }}>
@@ -88,6 +90,11 @@ const GraphPage: FunctionComponent = () => {
                   <Box sx={{ p: 0 }}>
                     {adjacencyMatrix && (
                       <VertexCover adjacencyMatrix={adjacencyMatrix} updateLayout={svHooks.updateHeight} />
+                    )}
+                  </Box>
+                  <Box sx={{ p: 0 }}>
+                    {adjacencyMatrix && (
+                      <Kernelization adjacencyMatrix={adjacencyMatrix} updateLayout={svHooks.updateHeight} />
                     )}
                   </Box>
                 </SwipeableViews>

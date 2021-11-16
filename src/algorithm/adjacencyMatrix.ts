@@ -118,6 +118,141 @@ export const dotStringFromAdjacencyMatrix = (matrix: AdjacencyMatrix): string =>
   return result
 }
 
+const getHighlightColor = (degree: number, topDegree: number, theme: Theme): string => {
+  if (degree === 0) {
+    return theme.palette.error.main
+  }
+  if (degree === 1) {
+    return theme.palette.success.main
+  }
+  if (degree >= topDegree) {
+    return theme.palette.primary.dark
+  }
+
+  return 'transparent'
+}
+
+export const highlightedDotStringFromAdjacencyMatrix = (matrix: AdjacencyMatrix, tops: number, theme: Theme): string => {
+  const keys = Object.keys(matrix)
+  const degrees = getAdjacencyMatrixDegreeMap(matrix)
+  const topDegree = tops
+
+  let result = 'graph {'
+
+  result += keys.map((row, index) => {
+    const highlight = getHighlightColor(degrees[row], topDegree, theme)
+    return `"${row}"[style=filled,fillcolor="${highlight}"];` + keys
+      .filter((col, i) => (i > index) && matrix[row][col])
+      .map(col => `"${row}" -- "${col}"`)
+      .join(';')
+  }).join('')
+
+  result += '}'
+
+  return result
+}
+
+export type DegreeArray = Array<{ vertex: string, degrees: number }>
+
+/**
+ * Gets the degree of every vertex
+ * @param matrix 
+ * @returns 
+ */
+export const getAdjacencyMatrixDegrees = (matrix: AdjacencyMatrix): DegreeArray => {
+  return _.reduce<AdjacencyMatrix, DegreeArray>(matrix, (accumulator, connections, vertex) => {
+    accumulator.push({
+      vertex: vertex,
+      degrees: _.reduce(connections, (count, isConnected) => {
+        return count + (+isConnected)
+      }, 0)
+    })
+    return accumulator
+  }, [])
+}
+
+export type DegreeMap = { [vertex: string]: number }
+
+/**
+ * Gets the degree of every vertex
+ * @param matrix 
+ * @returns 
+ */
+export const getAdjacencyMatrixDegreeMap = (matrix: AdjacencyMatrix): DegreeMap => {
+  return _.reduce<AdjacencyMatrix, DegreeMap>(matrix, (accumulator, connections, vertex) => {
+    accumulator[vertex] = _.reduce(connections, (count, isConnected) => {
+      return count + (+isConnected)
+    }, 0)
+    return accumulator
+  }, {})
+}
+
+/**
+ * Adds a pendant to an adjacency vertex
+ * @param matrix 
+ * @returns null if no pendant could be added
+ */
+export const addPendantToAdjacencyMatrix = (matrix: AdjacencyMatrix, topsDegree: number): AdjacencyMatrix | null => {
+  const result = _.cloneDeep(matrix)
+  const degrees = getAdjacencyMatrixDegrees(matrix)
+    .sort(({ degrees: a }, { degrees: b }) => a - b)
+
+  const candidate = degrees.find(({ degrees }) => (degrees > 1) && (degrees < topsDegree))
+  if (!candidate) {
+    return null
+  }
+
+  let edgesRemaining = candidate.degrees
+  for (const neighbor in result[candidate.vertex]) {
+    if (result[candidate.vertex][neighbor]) {
+      edgesRemaining -= 1
+      result[candidate.vertex][neighbor] = false
+      result[neighbor][candidate.vertex] = false
+
+      if (edgesRemaining === 1) {
+        break
+      }
+    }
+  }
+
+  return result
+}
+
+/**
+ * Removes a pendant from the adjacency matrix and restores it if possible
+ * @param matrix 
+ * @param original 
+ * @returns null if no pendant could be removed
+ */
+export const removePendantFromAdjacencyMatrix = (matrix: AdjacencyMatrix, original: AdjacencyMatrix): AdjacencyMatrix | null => {
+  const result = _.cloneDeep(matrix)
+  const degrees = getAdjacencyMatrixDegrees(matrix)
+  const origDegrees = getAdjacencyMatrixDegrees(original)
+
+  const candidate = degrees.find(({ degrees: deg }, index) => (deg === 1) && (origDegrees[index].degrees !== deg))
+  if (!candidate) {
+    const pendant = degrees.find(({ degrees: deg }) => deg === 1)
+    if (!pendant) {
+      return null
+    }
+
+    for (const neighbor in matrix[pendant.vertex]) {
+      if (!result[pendant.vertex][neighbor] && pendant.vertex !== neighbor) {
+        result[pendant.vertex][neighbor] = true
+        result[neighbor][pendant.vertex] = true
+      }
+    }
+    return result
+  }
+
+  for (const neighbor in matrix[candidate.vertex]) {
+    result[candidate.vertex][neighbor] = original[candidate.vertex][neighbor]
+    result[neighbor][candidate.vertex] = original[neighbor][candidate.vertex]
+  }
+
+  return result
+}
+
 const isAdjacencyMatrixCovered = (matrix: AdjacencyMatrix, cover: Set<string>): boolean => {
   const keys = Object.keys(matrix)
 
