@@ -95,7 +95,7 @@ const InputForm: FunctionComponent<Props> = ({ setAdjacencyMatrix }) => {
                   label="Vertices"
                   type="number"
                   fullWidth
-                  helperText="The number of vertices to generate."
+                  helperText="The number of vertices to generate"
                   required
                   {...errorProps('vertices', errors, touched)}
                 />
@@ -108,7 +108,7 @@ const InputForm: FunctionComponent<Props> = ({ setAdjacencyMatrix }) => {
                   type="number"
                   inputProps={{ step: "0.01" }}
                   fullWidth
-                  helperText="The probability of an edge to be generated."
+                  helperText="The probability of an edge to be generated"
                   required
                   {...errorProps('density', errors, touched)}
                 />
