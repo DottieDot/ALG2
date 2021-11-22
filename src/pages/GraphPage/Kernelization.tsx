@@ -1,7 +1,7 @@
-import { Add as PlusIcon, Remove as SubIcon } from '@mui/icons-material'
-import { Box, Button, Paper, Stack, TextField, Typography, useTheme } from '@mui/material'
+import { Add as PlusIcon, Remove as SubIcon, Restore as RestoreIcon } from '@mui/icons-material'
+import { Box, Button, Divider, Paper, Stack, TextField, Typography, useTheme } from '@mui/material'
 import { FunctionComponent, memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { addPendantToAdjacencyMatrix, AdjacencyMatrix, highlightedDotStringFromAdjacencyMatrix, removePendantFromAdjacencyMatrix } from '../../algorithm'
+import { addPendantToAdjacencyMatrix, addTopToAdjacencyMatrix, AdjacencyMatrix, highlightedDotStringFromAdjacencyMatrix, removePendantFromAdjacencyMatrix, removeTopFromAdjacency } from '../../algorithm'
 import Graph from './Graph'
 
 interface Props {
@@ -12,9 +12,8 @@ interface Props {
 const Kernelization: FunctionComponent<Props> = ({ adjacencyMatrix: origMatrix, updateLayout }) => {
   const theme = useTheme()
   const [adjacencyMatrix, setAdjacencyMatrix] = useState(origMatrix)
-  const [tops, setTops] = useState(2)
   const [k, setK] = useState(0)
-  const dotString = useMemo(() => highlightedDotStringFromAdjacencyMatrix(adjacencyMatrix, tops,  theme), [adjacencyMatrix, tops, theme])
+  const dotString = useMemo(() => highlightedDotStringFromAdjacencyMatrix(adjacencyMatrix, k, theme), [adjacencyMatrix, k, theme])
 
   useEffect(() => {
     setAdjacencyMatrix(origMatrix)
@@ -25,12 +24,24 @@ const Kernelization: FunctionComponent<Props> = ({ adjacencyMatrix: origMatrix, 
   }, [updateLayout, adjacencyMatrix])
 
   const addPendant = useCallback(() => {
-    setAdjacencyMatrix(addPendantToAdjacencyMatrix(adjacencyMatrix, tops) ?? adjacencyMatrix)
-  }, [adjacencyMatrix, setAdjacencyMatrix, tops])
+    setAdjacencyMatrix(addPendantToAdjacencyMatrix(adjacencyMatrix, k) ?? adjacencyMatrix)
+  }, [adjacencyMatrix, setAdjacencyMatrix, k])
 
   const removePendant = useCallback(() => {
     setAdjacencyMatrix(removePendantFromAdjacencyMatrix(adjacencyMatrix, origMatrix) ?? adjacencyMatrix)
   }, [adjacencyMatrix, setAdjacencyMatrix, origMatrix])
+
+  const addTop = useCallback(() => {
+    setAdjacencyMatrix(addTopToAdjacencyMatrix(adjacencyMatrix, k) ?? adjacencyMatrix)
+  }, [adjacencyMatrix, setAdjacencyMatrix, k])
+
+  const removeTop = useCallback(() => {
+    setAdjacencyMatrix(removeTopFromAdjacency(adjacencyMatrix, origMatrix, k) ?? adjacencyMatrix)
+  }, [setAdjacencyMatrix, adjacencyMatrix, origMatrix, k])
+
+  const restore = useCallback(() => {
+    setAdjacencyMatrix(origMatrix)
+  }, [setAdjacencyMatrix, origMatrix])
 
   return (
     <Box sx={{ p: 3, position: 'relative' }}>
@@ -48,23 +59,18 @@ const Kernelization: FunctionComponent<Props> = ({ adjacencyMatrix: origMatrix, 
               min: 1
             }}
           />
-          <TextField
-            label="Tops degree"
-            type="number"
-            placeholder="10"
-            variant="standard"
-            value={tops.toString()}
-            onChange={e => setTops(+e.target.value)}
-            inputProps={{
-              min: 2
-            }}
-          />
           <Button onClick={removePendant} variant="outlined" startIcon={<SubIcon />}>Remove Pendant</Button>
           <Button onClick={addPendant} variant="outlined" startIcon={<PlusIcon />}>Add Pendant</Button>
-          <Button onClick={removePendant} variant="outlined" startIcon={<SubIcon />} disabled>Remove Top</Button>
-          <Button onClick={addPendant} variant="outlined" startIcon={<PlusIcon />} disabled>Add Top</Button>
+          <Button onClick={removeTop} variant="outlined" startIcon={<SubIcon />}>Remove Top</Button>
+          <Button onClick={addTop} variant="outlined" startIcon={<PlusIcon />}>Add Top</Button>
+          <Button onClick={restore} variant="outlined" color="secondary" startIcon={<RestoreIcon />}>Restore</Button>
         </Stack>
       </Paper>
+      <Box sx={{ height: 500, my: 2 }}>
+        <Graph dotString={dotString} />
+      </Box>
+      <Typography variant="h5" gutterBottom>Vertex Cover</Typography>
+      <Divider />
       <Box sx={{ height: 500, mt: 2 }}>
         <Graph dotString={dotString} />
       </Box>

@@ -41,7 +41,7 @@ const Graph: FunctionComponent<{ dotString: string }> = ({ dotString }) => {
             fit: true,
             zoom: false,
             width: width,
-            height: height,
+            height: height
           }}
         />
       )}

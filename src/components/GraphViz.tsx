@@ -22,7 +22,7 @@ const GraphViz: FunctionComponent<GraphVizProps> = ({ dot, options, className })
         useWorker: true,
         totalMemory: 1024 * 1024 * 256, // 256 MiB
         ...options
-      })
+      }
       .renderDot(dot, () => {
         setLoading(false)
       })

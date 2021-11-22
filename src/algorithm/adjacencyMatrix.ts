@@ -240,6 +240,7 @@ export const removePendantFromAdjacencyMatrix = (matrix: AdjacencyMatrix, origin
       if (!result[pendant.vertex][neighbor] && pendant.vertex !== neighbor) {
         result[pendant.vertex][neighbor] = true
         result[neighbor][pendant.vertex] = true
+        break
       }
     }
     return result
@@ -252,6 +253,67 @@ export const removePendantFromAdjacencyMatrix = (matrix: AdjacencyMatrix, origin
 
   return result
 }
+
+export const addTopToAdjacencyMatrix = (matrix: AdjacencyMatrix, topsDegree: number): AdjacencyMatrix | null => {
+  const result = _.cloneDeep(matrix)
+  const degrees = getAdjacencyMatrixDegrees(matrix)
+    .sort(({ degrees: a }, { degrees: b }) => b - a)
+
+  if (degrees.length < topsDegree) {
+    return null
+  }
+
+  const candidate = degrees.find(({ degrees: deg }, index) => deg < topsDegree)
+  if (!candidate) { 
+    return null
+  }
+
+  let currentDegree = candidate.degrees
+  for (const neighbor in matrix[candidate.vertex]) {
+    if (!result[candidate.vertex][neighbor] && candidate.vertex !== neighbor) {
+      result[candidate.vertex][neighbor] = true
+      result[neighbor][candidate.vertex] = true
+
+      ++currentDegree
+    }
+    
+    if (currentDegree === topsDegree) {
+      break
+    }
+  }
+
+  return result
+}
+
+export const removeTopFromAdjacency = (matrix: AdjacencyMatrix, original: AdjacencyMatrix, topsDegree: number): AdjacencyMatrix | null => {
+  const result = _.cloneDeep(matrix)
+  const degrees = getAdjacencyMatrixDegrees(matrix)
+  const origDegrees = getAdjacencyMatrixDegrees(original)
+
+  const candidate = degrees.find(({ degrees: deg }, index) => (deg >= topsDegree) && (origDegrees[index].degrees !== deg))
+  if (!candidate) {
+    const pendant = degrees.find(({ degrees: deg }) => deg >= topsDegree)
+    if (!pendant) {
+      return null
+    }
+
+    for (const neighbor in matrix[pendant.vertex]) {
+      if (!result[pendant.vertex][neighbor] && pendant.vertex !== neighbor) {
+        result[pendant.vertex][neighbor] = false
+        result[neighbor][pendant.vertex] = false
+      }
+    }
+    return result
+  }
+
+  for (const neighbor in matrix[candidate.vertex]) {
+    result[candidate.vertex][neighbor] = original[candidate.vertex][neighbor]
+    result[neighbor][candidate.vertex] = original[neighbor][candidate.vertex]
+  }
+
+  return result
+}
+
 
 const isAdjacencyMatrixCovered = (matrix: AdjacencyMatrix, cover: Set<string>): boolean => {
   const keys = Object.keys(matrix)
