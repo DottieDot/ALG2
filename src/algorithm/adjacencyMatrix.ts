@@ -446,7 +446,5 @@ export const getVertexCoverForAdjacencyMatrixOptimized = (
     }
   }
 
-  console.log(cover)
-
-  return getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, [...keys], cover, undefined, undefined, combinations(keys.size, k - cover.size))[0]
+  return getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, [...keys], cover, cover.size, undefined, combinations(keys.size, k - cover.size))[0]
 }

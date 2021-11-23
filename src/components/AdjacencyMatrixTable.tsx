@@ -48,7 +48,7 @@ export interface AdjacencyMatrixTableProps {
   onChange: (newMatrix: AdjacencyMatrix) => void
 }
 
-const MatrixCell: FunctionComponent<GridCellProps> = ({ key, style, rowIndex, columnIndex }) => {
+const MatrixCell: FunctionComponent<GridCellProps> = ({ style, rowIndex, columnIndex }) => {
   const { hover, setHover, adjacencyMatrix, keys, onChange } = useContext(matrixContext)
 
   const onHover = useCallback(() => {
@@ -63,13 +63,13 @@ const MatrixCell: FunctionComponent<GridCellProps> = ({ key, style, rowIndex, co
   }, [adjacencyMatrix, keys, rowIndex, columnIndex, onChange])
 
   if (rowIndex === 0 && columnIndex === 0) {
-    return <Header style={style} key={key} />
+    return <Header style={style} />
   }
   
   if (columnIndex === 0) {
     const hovered = rowIndex === hover?.row
     return (
-      <RowHeader className={hovered ? 'hover' : ''} style={style} key={key}>
+      <RowHeader className={hovered ? 'hover' : ''} style={style}>
         {keys[Math.max(rowIndex, columnIndex) - 1]}
       </RowHeader>
     )
@@ -78,21 +78,21 @@ const MatrixCell: FunctionComponent<GridCellProps> = ({ key, style, rowIndex, co
   if (rowIndex === 0) {
     const hovered = columnIndex === hover?.col
     return (
-      <ColumnHeader className={hovered ? 'hover' : ''} style={style} key={key}>
+      <ColumnHeader className={hovered ? 'hover' : ''} style={style}>
         {keys[Math.max(rowIndex, columnIndex) - 1]}
       </ColumnHeader>
     )
   }
 
   if (rowIndex === columnIndex) {
-    return <div key={key} style={style} onMouseEnter={onHover}></div>
+    return <div style={style} onMouseEnter={onHover}></div>
   }
 
   return (
     <Checkbox
       onMouseEnter={onHover}
       style={style}
-      key={key}
+     
       checked={adjacencyMatrix[keys[rowIndex - 1]][keys[columnIndex - 1]]}
       onChange={handleChange}
       disableRipple

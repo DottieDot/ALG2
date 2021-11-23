@@ -1,12 +1,13 @@
-import { Grid, Stack } from '@mui/material'
+import { Grid, InputAdornment, Stack } from '@mui/material'
 import { Field, Form, Formik, FormikErrors, FormikTouched } from 'formik'
 import { TextField } from 'formik-mui'
 import { Fragment, FunctionComponent, memo, useCallback, useEffect, useMemo, useState } from 'react'
 import * as Yup from 'yup'
 import { AdjacencyMatrix } from '../../algorithm'
-import { XButton } from '../../components'
+import { FontAwesomeIcon, XButton } from '../../components'
 import { GenerateAdjacencyMatrixWorker, GENERATE_ADJACENCY_MATRIX_WORK_FINISHED, startGenerateAdjacencyMatrixWork } from '../../workers'
 import FileUploadDialog from './FileUploadDialog'
+import { faPercentage, faProjectDiagram } from '@fortawesome/free-solid-svg-icons'
 
 interface Props {
   setAdjacencyMatrix: (adjacencyMatrix: AdjacencyMatrix) => void
@@ -94,6 +95,13 @@ const InputForm: FunctionComponent<Props> = ({ setAdjacencyMatrix }) => {
                   name="vertices"
                   label="Vertices"
                   type="number"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <FontAwesomeIcon fontSize="inherit" icon={faProjectDiagram} />
+                      </InputAdornment>
+                    )
+                  }}
                   fullWidth
                   helperText="The number of vertices to generate"
                   required
@@ -106,7 +114,16 @@ const InputForm: FunctionComponent<Props> = ({ setAdjacencyMatrix }) => {
                   name="density"
                   label="Density"
                   type="number"
-                  inputProps={{ step: "0.01" }}
+                  InputProps={{ 
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <FontAwesomeIcon fontSize="inherit" icon={faPercentage} />
+                      </InputAdornment>
+                    )
+                  }}
+                  inputProps={{
+                    step: "0.01" 
+                  }}
                   fullWidth
                   helperText="The probability of an edge to be generated"
                   required

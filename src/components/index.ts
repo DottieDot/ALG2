@@ -5,6 +5,9 @@ export * from './AdjacencyMatrixTable'
 export { default as FileUploadButton } from './FileUploadButton'
 export * from './FileUploadButton'
 
+export { default as FontAwesomeIcon } from './FontAwesomeIcon'
+export * from './FontAwesomeIcon'
+
 export { default as GraphViz } from './GraphViz'
 export * from './GraphViz'
 

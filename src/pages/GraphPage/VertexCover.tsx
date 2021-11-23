@@ -1,6 +1,8 @@
-import { Box, Fade, LinearProgress, TextField, Typography, useTheme } from '@mui/material'
+import { faSitemap } from '@fortawesome/free-solid-svg-icons'
+import { Box, Fade, InputAdornment, LinearProgress, TextField, Typography, useTheme } from '@mui/material'
 import { FunctionComponent, memo, useEffect, useState } from 'react'
 import { AdjacencyMatrix, dotStringFromAdjacencyMatrixWithCover } from '../../algorithm'
+import { FontAwesomeIcon } from '../../components'
 import { VertexCoverWorker, START_VERTEX_COVER_WORK, VERTEX_COVER_FINISHED, VERTEX_COVER_PROGRESS_UPDATE } from '../../workers'
 import Graph from './Graph'
 
@@ -79,6 +81,13 @@ const VertexCover: FunctionComponent<Props> = ({ adjacencyMatrix, updateLayout }
         placeholder="10"
         value={k}
         onChange={e => setK(e.target.value)}
+        InputProps={{ 
+          startAdornment: (
+            <InputAdornment position="start">
+              <FontAwesomeIcon fontSize="inherit" icon={faSitemap} />
+            </InputAdornment>
+          )
+        }}
         inputProps={{
           min: 1
         }}

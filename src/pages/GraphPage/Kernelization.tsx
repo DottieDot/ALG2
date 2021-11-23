@@ -126,7 +126,7 @@ const Kernelization: FunctionComponent<Props> = ({ adjacencyMatrix: origMatrix, 
       <Typography variant="h5" gutterBottom>Vertex Cover</Typography>
       <Divider />
       {coverDotString && (
-        <Box sx={{ height: 500 }}>
+        <Box sx={{ height: 500, mt: 2 }}>
           <Graph dotString={coverDotString} />
         </Box>
       )}
