@@ -1,7 +1,8 @@
 import { Add as PlusIcon, Remove as SubIcon, Restore as RestoreIcon } from '@mui/icons-material'
-import { Box, Button, Divider, Paper, Stack, TextField, Typography, useTheme } from '@mui/material'
+import { Box, Button, Divider, Fade, LinearProgress, Paper, Stack, TextField, Typography, useTheme } from '@mui/material'
 import { FunctionComponent, memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { addPendantToAdjacencyMatrix, addTopToAdjacencyMatrix, AdjacencyMatrix, highlightedDotStringFromAdjacencyMatrix, removePendantFromAdjacencyMatrix, removeTopFromAdjacency } from '../../algorithm'
+import { addPendantToAdjacencyMatrix, addTopToAdjacencyMatrix, AdjacencyMatrix, dotStringFromAdjacencyMatrixWithCover, highlightedDotStringFromAdjacencyMatrix, removePendantFromAdjacencyMatrix, removeTopFromAdjacency } from '../../algorithm'
+import { START_OPTIMIZED_VERTEX_COVER_WORK, VertexCoverWorker, VERTEX_COVER_FINISHED, VERTEX_COVER_PROGRESS_UPDATE } from '../../workers'
 import Graph from './Graph'
 
 interface Props {
@@ -14,6 +15,8 @@ const Kernelization: FunctionComponent<Props> = ({ adjacencyMatrix: origMatrix, 
   const [adjacencyMatrix, setAdjacencyMatrix] = useState(origMatrix)
   const [k, setK] = useState(0)
   const dotString = useMemo(() => highlightedDotStringFromAdjacencyMatrix(adjacencyMatrix, k, theme), [adjacencyMatrix, k, theme])
+  const [progress, setProgress] = useState(0)
+  const [coverDotString, setCoverDotString] = useState<string | null>(null)
 
   useEffect(() => {
     setAdjacencyMatrix(origMatrix)
@@ -21,7 +24,7 @@ const Kernelization: FunctionComponent<Props> = ({ adjacencyMatrix: origMatrix, 
 
   useEffect(() => {
     updateLayout()
-  }, [updateLayout, adjacencyMatrix])
+  }, [updateLayout, adjacencyMatrix, coverDotString])
 
   const addPendant = useCallback(() => {
     setAdjacencyMatrix(addPendantToAdjacencyMatrix(adjacencyMatrix, k) ?? adjacencyMatrix)
@@ -43,8 +46,59 @@ const Kernelization: FunctionComponent<Props> = ({ adjacencyMatrix: origMatrix, 
     setAdjacencyMatrix(origMatrix)
   }, [setAdjacencyMatrix, origMatrix])
 
+  useEffect(() => {
+    if (Number.isNaN(+k)) {
+      return
+    }
+
+    const worker = new VertexCoverWorker()
+
+    setProgress(0)
+    worker.onMessage = ({ data }) => {
+      switch (data.type) {
+        case VERTEX_COVER_PROGRESS_UPDATE:
+          setProgress(data.progress)
+          break
+        case VERTEX_COVER_FINISHED:
+          setProgress(1)
+          if (data.result) {
+            setCoverDotString(dotStringFromAdjacencyMatrixWithCover(adjacencyMatrix, data.result, theme))
+          }
+          else {
+            setCoverDotString('')
+          }
+          break
+      }
+    }
+
+    worker.postMessage({
+      type: START_OPTIMIZED_VERTEX_COVER_WORK,
+      adjacencyMatrix,
+      verticesInCover: +k
+    })
+
+    return () => {
+      worker.terminate()
+    }
+  }, [adjacencyMatrix, setProgress, setCoverDotString, k, theme])
+
   return (
     <Box sx={{ p: 3, position: 'relative' }}>
+      <Fade in={progress !== 1}>
+        <LinearProgress 
+          sx={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            width: '100%',
+            '& .MuiLinearProgress-bar': {
+              transition: 'none',
+            }
+          }} 
+          value={progress * 100}
+          variant="determinate" 
+        />
+      </Fade>
       <Paper sx={{ p: 2 }} variant="outlined">
         <Typography variant="h5" gutterBottom>Configuration</Typography>
         <Stack direction="row" alignItems="end" spacing={2}>
@@ -71,9 +125,20 @@ const Kernelization: FunctionComponent<Props> = ({ adjacencyMatrix: origMatrix, 
       </Box>
       <Typography variant="h5" gutterBottom>Vertex Cover</Typography>
       <Divider />
-      <Box sx={{ height: 500, mt: 2 }}>
-        <Graph dotString={dotString} />
-      </Box>
+      {coverDotString && (
+        <Box sx={{ height: 500 }}>
+          <Graph dotString={coverDotString} />
+        </Box>
+      )}
+      {(coverDotString === '') && (
+        <Typography 
+          variant="h5"
+          sx={{mt: 2}}
+          align="center"
+        >
+          No vertex cover found
+        </Typography>
+      )}
     </Box>
   )
 }

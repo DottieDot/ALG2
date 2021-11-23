@@ -314,6 +314,19 @@ export const removeTopFromAdjacency = (matrix: AdjacencyMatrix, original: Adjace
   return result
 }
 
+const getPendantNeighbor = (matrix: AdjacencyMatrix, pendant: string): string | null => {
+  return _.findKey(matrix[pendant], (connected) => connected) ?? null
+}
+
+const getUncoveredDegree = (matrix: AdjacencyMatrix, vertex: string, cover: Set<string>): number => {
+  if (cover.has(vertex)) {
+    return 0
+  }
+
+  return _.reduce(matrix[vertex], (accumulator, connected, connection) => {
+    return accumulator + ((connected && !cover.has(connection)) ? 1 : 0)
+  }, 0)
+}
 
 const isAdjacencyMatrixCovered = (matrix: AdjacencyMatrix, cover: Set<string>): boolean => {
   const keys = Object.keys(matrix)
@@ -400,4 +413,40 @@ export const getVertexCoverForAdjacencyMatrix = (
   progressCallback ?: (p: number) => void, 
 ): Set<string> | null => {
   return getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback)[0]
+}
+
+export const getVertexCoverForAdjacencyMatrixOptimized = (  
+  matrix            : AdjacencyMatrix, 
+  k                 : number, 
+  progressCallback ?: (p: number) => void, 
+): Set<string> | null => {
+  const keys = new Set<string>(Object.keys(matrix))
+  const cover = new Set<string>()
+
+  const degrees = getAdjacencyMatrixDegrees(matrix)
+    .sort(({ degrees: a }, { degrees: b }) => a - b)
+
+  let topsDegree = k
+  for (const { degrees: deg, vertex } of degrees) {
+    if (deg === 0) {
+      keys.delete(vertex)
+    }
+    else if (deg === 1 && !cover.has(vertex)) {
+      const neighbor = getPendantNeighbor(matrix, vertex)!
+      cover.add(neighbor)
+      keys.delete(neighbor)
+      keys.delete(vertex)
+
+      --topsDegree
+    }
+    else if (deg >= topsDegree && getUncoveredDegree(matrix, vertex, cover) >= topsDegree) {
+      cover.add(vertex)
+      keys.delete(vertex)
+      --topsDegree
+    }
+  }
+
+  console.log(cover)
+
+  return getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, [...keys], cover, undefined, undefined, combinations(keys.size, k - cover.size))[0]
 }
