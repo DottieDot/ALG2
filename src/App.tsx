@@ -1,8 +1,16 @@
-import { createTheme, CssBaseline, darkScrollbar, ThemeProvider } from '@mui/material'
-import { FunctionComponent } from 'react'
+import { createTheme, CssBaseline, darkScrollbar, ThemeProvider, useMediaQuery } from '@mui/material'
+import { FunctionComponent, useMemo } from 'react'
+import { SettingsProvider } from './components'
+import { useSettings } from './hooks'
 import { GraphPage } from './pages'
 
-const theme = createTheme({
+const lightTheme = createTheme({
+  palette: {
+    mode: 'light'
+  }
+})
+
+const darkTheme = createTheme({
   palette: {
     mode: 'dark'
   },
@@ -18,12 +26,30 @@ const theme = createTheme({
   }
 })
 
-const App: FunctionComponent = (_) => {
+const Theme: FunctionComponent = ({ children }) => {
+  const settings = useSettings().settings
+  const systemIsDark = useMediaQuery('(prefers-color-scheme: dark)')
+  const dark = settings.theme === 'dark' || (settings.theme === 'system' && systemIsDark)
+  const theme = useMemo(
+    () => createTheme(dark ? darkTheme : lightTheme),
+    [dark]
+  )
+  
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <GraphPage />
+      {children}
     </ThemeProvider>
+  )
+}
+
+const App: FunctionComponent = (_) => {
+  return (
+    <SettingsProvider>
+      <Theme>
+        <CssBaseline />
+        <GraphPage />
+      </Theme>
+    </SettingsProvider>
   )
 }
 export default App

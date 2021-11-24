@@ -13,8 +13,9 @@ import GraphDisplay from './GraphDisplay'
 import InputForm from './InputForm'
 import Kernelization from './Kernelization'
 import VertexCover from './VertexCover'
+import VertexCoverTakeTwo from './VertexCoverTakeTwo'
 
-const tabValues = ['matrix', 'graph', 'cover', 'kernelization', 'extras']
+const tabValues = ['matrix', 'graph', 'cover', 'kernelization', 't2', 'extras']
 const GraphPage: FunctionComponent = () => {
   const [tab, setTab] = useState('matrix')
   const [svHooks, setSvHooks] = useState<SwipeableViewsHooks>({ updateHeight: () => { } })
@@ -54,6 +55,7 @@ const GraphPage: FunctionComponent = () => {
                     <Tab label="Graph" value='graph' />
                     <Tab label="Vertex Cover" value='cover' />
                     <Tab label="Kernelization" value='kernelization' />
+                    <Tab label="Take Two" value='t2' />
                     <Tab label="Extras" value="extras" />
                     <Box sx={{ flexGrow: 1 }} />
                     {adjacencyMatrix && (
@@ -97,6 +99,11 @@ const GraphPage: FunctionComponent = () => {
                   <Box sx={{ p: 0 }}>
                     {adjacencyMatrix && (
                       <Kernelization adjacencyMatrix={adjacencyMatrix} updateLayout={svHooks.updateHeight} />
+                    )}
+                  </Box>
+                  <Box sx={{ p: 0 }}>
+                    {adjacencyMatrix && (
+                      <VertexCoverTakeTwo adjacencyMatrix={adjacencyMatrix} updateLayout={svHooks.updateHeight} />
                     )}
                   </Box>
                   <Box sx={{ p: 3 }}>

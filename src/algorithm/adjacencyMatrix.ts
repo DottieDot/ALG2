@@ -87,8 +87,8 @@ export const dotStringFromAdjacencyMatrix = (matrix: AdjacencyMatrix): string =>
   result += keys.map((row, index) => (
     `"${row}";` + keys
       .filter((col, i) => (i > index) && matrix[row][col])
-      .map(col => `"${row}" -- "${col}"`)
-      .join(';')
+      .map(col => `"${row}" -- "${col}";`)
+      .join('')
   )).join('')
 
   result += '}'
@@ -109,8 +109,8 @@ export const dotStringFromAdjacencyMatrix = (matrix: AdjacencyMatrix): string =>
   result += keys.map((row, index) => (
     `"${row}"[${cover.has(row) ?  `style=filled,fillcolor="${theme.palette.info.main}"` : ''}];` + keys
       .filter((col, i) => (i > index) && matrix[row][col])
-      .map(col => `"${row}" -- "${col}"`)
-      .join(';')
+      .map(col => `"${row}" -- "${col}";`)
+      .join('')
   )).join('')
 
   result += '}'
@@ -344,6 +344,45 @@ const isAdjacencyMatrixCovered = (matrix: AdjacencyMatrix, cover: Set<string>): 
   return true
 }
 
+const countUncoveredEdges = (matrix: AdjacencyMatrix, cover: Set<string>): number => {
+  const keys = Object.keys(matrix)
+  let result = 0
+
+  for (let i = 0; i < keys.length; ++i) {
+    for (let j = 0; j < i; ++j) {
+      const isEdge = matrix[keys[i]][keys[j]]
+
+      if (isEdge && !cover.has(keys[i]) && !cover.has(keys[j])) {
+        result += 1
+      }
+    }
+  }
+
+  return result
+}
+
+type Edges = Map<string, { a: string, b: string }>
+
+const getEdges = (matrix: AdjacencyMatrix): Edges => {
+  const keys = Object.keys(matrix)
+  const result: Edges = new Map()
+
+  for (let i = 0; i < keys.length; ++i) {
+    for (let j = 0; j < i; ++j) {
+      const isEdge = matrix[keys[i]][keys[j]]
+
+      if (isEdge) {
+        result.set(`${keys[i]}-${keys[j]}`, {
+          a: keys[i],
+          b: keys[j]
+        })
+      }
+    }
+  }
+
+  return result
+}
+
 const factorial = (n: number): bigint => {
   let result = 1n
   for (let i = BigInt(n); i >= 1n; --i) {
@@ -446,5 +485,43 @@ export const getVertexCoverForAdjacencyMatrixOptimized = (
     }
   }
 
-  return getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, [...keys], cover, cover.size, undefined, combinations(keys.size, k - cover.size))[0]
+  if (countUncoveredEdges(matrix, cover) > (k ** 2)) {
+    return null
+  }
+
+  return getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, [...keys], cover, undefined, undefined, combinations(keys.size, k - cover.size))[0]
+}
+
+const removeEdgesConnectedToVertex = (vertex: string, matrix: AdjacencyMatrix, edges: Edges) => {
+  _.forEach(matrix[vertex], (connected, to) => {
+    if (connected) {
+      edges.delete(`${vertex}-${to}`)
+      edges.delete(`${to}-${vertex}`)
+      console.log(edges)
+    }
+  })
+}
+
+export const getVertexCoverTakeTwo = (matrix: AdjacencyMatrix, progressCallback?: (p: number) => void): Set<string> => {
+  const result = new Set<string>()
+  let edges = getEdges(matrix)
+  const startCount = edges.size
+
+  let i = 0
+  while (edges.size) {
+    const [, edge] = edges.entries().next().value
+
+    removeEdgesConnectedToVertex(edge.a, matrix, edges)
+    removeEdgesConnectedToVertex(edge.b, matrix, edges)
+
+    if (!(i % 250)) {
+      progressCallback && progressCallback(1 - edges.size / startCount)
+      // console.log(edges)
+    }
+
+    result.add(edge.a).add(edge.b)
+    ++i
+  }
+
+  return result
 }
