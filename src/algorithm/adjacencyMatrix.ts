@@ -497,30 +497,35 @@ const removeEdgesConnectedToVertex = (vertex: string, matrix: AdjacencyMatrix, e
     if (connected) {
       edges.delete(`${vertex}-${to}`)
       edges.delete(`${to}-${vertex}`)
-      console.log(edges)
     }
   })
 }
 
+/**
+ * Approximates a vertex cover with the "take two" algorithm
+ * @param matrix 
+ * @param progressCallback 
+ * @returns the approximated vertex cover
+ */
 export const getVertexCoverTakeTwo = (matrix: AdjacencyMatrix, progressCallback?: (p: number) => void): Set<string> => {
   const result = new Set<string>()
   let edges = getEdges(matrix)
   const startCount = edges.size
-
-  let i = 0
+  
+  let prevProgress = 0
   while (edges.size) {
     const [, edge] = edges.entries().next().value
 
     removeEdgesConnectedToVertex(edge.a, matrix, edges)
     removeEdgesConnectedToVertex(edge.b, matrix, edges)
 
-    if (!(i % 250)) {
-      progressCallback && progressCallback(1 - edges.size / startCount)
-      // console.log(edges)
+    let progress = 1 - (edges.size / startCount)
+    if ((progress - prevProgress) >= 0.01) {
+      progressCallback && progressCallback(progress)
+      prevProgress = progress
     }
 
     result.add(edge.a).add(edge.b)
-    ++i
   }
 
   return result
