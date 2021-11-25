@@ -1,10 +1,9 @@
 import { Box, Checkbox, styled, Typography, useTheme } from '@mui/material'
 import { SxProps } from '@mui/system'
-import _ from 'lodash'
 import { ChangeEvent, createContext, FunctionComponent, memo, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import { GridCellProps, MultiGrid } from 'react-virtualized'
 import AutoSizer from 'react-virtualized-auto-sizer'
-import { AdjacencyMatrix } from '../algorithm'
+import { AdjacencyMatrix, Edge } from '../algorithm'
 
 interface MatrixContext {
   hover          : { col: number, row: number } | null
@@ -17,7 +16,7 @@ interface MatrixContext {
 const matrixContext = createContext<MatrixContext>({
   hover          : null,
   setHover       : () => {},
-  adjacencyMatrix: {},
+  adjacencyMatrix: new AdjacencyMatrix({}),
   keys           : [],
   onChange       : () => {}
 })
@@ -50,17 +49,15 @@ export interface AdjacencyMatrixTableProps {
 
 const MatrixCell: FunctionComponent<GridCellProps> = ({ style, rowIndex, columnIndex }) => {
   const { hover, setHover, adjacencyMatrix, keys, onChange } = useContext(matrixContext)
+  const edge = useMemo(() => new Edge(keys[rowIndex - 1], keys[columnIndex - 1]), [columnIndex, keys, rowIndex])
 
   const onHover = useCallback(() => {
     setHover({ col: columnIndex, row: rowIndex })
   }, [setHover, columnIndex, rowIndex])
 
   const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    const copy = _.cloneDeep(adjacencyMatrix)
-    copy[keys[rowIndex    - 1]][keys[columnIndex - 1]] = e.target.checked
-    copy[keys[columnIndex - 1]][keys[rowIndex    - 1]] = e.target.checked
-    onChange(copy)
-  }, [adjacencyMatrix, keys, rowIndex, columnIndex, onChange])
+    onChange(adjacencyMatrix.clone().addEdge(edge))
+  }, [onChange, adjacencyMatrix, edge])
 
   if (rowIndex === 0 && columnIndex === 0) {
     return <Header style={style} />
@@ -92,8 +89,7 @@ const MatrixCell: FunctionComponent<GridCellProps> = ({ style, rowIndex, columnI
     <Checkbox
       onMouseEnter={onHover}
       style={style}
-     
-      checked={adjacencyMatrix[keys[rowIndex - 1]][keys[columnIndex - 1]]}
+      checked={adjacencyMatrix.hasEdge(edge)}
       onChange={handleChange}
       disableRipple
     />
@@ -103,7 +99,7 @@ const MatrixCell: FunctionComponent<GridCellProps> = ({ style, rowIndex, columnI
 const AdjacencyMatrixTable: FunctionComponent<AdjacencyMatrixTableProps> = ({ adjacencyMatrix, sx, onChange }) => {
   const theme = useTheme()
   const [hover, setHover] = useState<{ col: number, row: number }|null>(null)
-  const keys = useMemo(() => Object.keys(adjacencyMatrix), [adjacencyMatrix])
+  const keys = useMemo(() => adjacencyMatrix.vertices, [adjacencyMatrix])
   const gridRef = useRef<MultiGrid>(null)
 
   return (

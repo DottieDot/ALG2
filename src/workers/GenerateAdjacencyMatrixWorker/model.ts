@@ -1,4 +1,4 @@
-import { AdjacencyMatrix } from '../../algorithm'
+import { RawAdjacencyMatrix } from '../../algorithm'
 
 export const START_GENERATE_ADJACENCY_MATRIX_WORK = 'START_GENERATE_ADJACENCY_MATRIX_WORK'
 
@@ -19,7 +19,7 @@ export const GENERATE_ADJACENCY_MATRIX_WORK_FINISHED = 'GENERATE_ADJACENCY_MATRI
 
 export interface AdjacencyMatrixWorkFinished {
   type           : typeof GENERATE_ADJACENCY_MATRIX_WORK_FINISHED,
-  adjacencyMatrix: AdjacencyMatrix
+  adjacencyMatrix: RawAdjacencyMatrix
 }
 
 export type GenerateAdjacencyMatrixWorkerOutgoing = AdjacencyMatrixWorkFinished

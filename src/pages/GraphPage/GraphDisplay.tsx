@@ -1,6 +1,6 @@
 import { Box } from '@mui/material'
 import { FunctionComponent, memo, useMemo } from 'react'
-import { AdjacencyMatrix, dotStringFromAdjacencyMatrix } from '../../algorithm'
+import { AdjacencyMatrix, getDotStringForAdjacencyMatrix } from '../../algorithm'
 import Graph from './Graph'
 
 interface Props {
@@ -8,7 +8,7 @@ interface Props {
 }
 
 const GraphDisplay: FunctionComponent<Props> = ({ adjacencyMatrix }) => {
-  const dotString = useMemo(() => dotStringFromAdjacencyMatrix(adjacencyMatrix), [adjacencyMatrix])
+  const dotString = useMemo(() => getDotStringForAdjacencyMatrix(adjacencyMatrix), [adjacencyMatrix])
 
   return (
     <Box sx={{ height: 500 }}>

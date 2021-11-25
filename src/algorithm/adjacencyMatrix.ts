@@ -1,532 +1,495 @@
-import { Theme } from '@mui/material'
 import _ from 'lodash'
 import Queue from './Queue'
 
-export type AdjacencyMatrix = { [row: string]: { [column: string]: boolean } }
+/**
+ * The raw data structure for an adjacency matrix
+ */
+export type RawAdjacencyMatrix = { [vertex: string]: { [vertex: string]: boolean } }
+
+export class Edge {
+  public vertexA: string
+  public vertexB: string
+
+  public constructor(vertexA: string, vertexB: string) {
+    this.vertexA = vertexA
+    this.vertexB = vertexB
+  }
+
+  /**
+   * Creates a string representation for an edge with weak ordering
+   * So, new Edge('a', 'b') === new Edge('b', 'a')
+   * @returns 
+   */
+  public toString(): string {
+    if (this.vertexA <= this.vertexB) {
+      return `${this.vertexA}-${this.vertexB}`
+    }
+    else {
+      return `${this.vertexB}-${this.vertexA}`
+    }
+  }
+}
 
 /**
- * Connects all subgraphs in an adjacency matrix
- * @param matrix The matrix to connect
- * @returns A new, connected, matrix
+ * Stores a vertex and its degree
  */
-export const connectAdjacencyMatrix = (matrix: AdjacencyMatrix): AdjacencyMatrix => {
-  const result              = { ...matrix }
-  const keys                = Object.keys(result)
-  const processed           = new Set<string>()
-  const subgraphs: string[] = []
-  let   prevIndex           = -1
+export class VertexDegree {
+  public vertex: string
+  public degree: number
 
-  while (processed.size < keys.length) {
-    const index = _.findIndex(keys, key => !processed.has(key), prevIndex + 1)
-    prevIndex = index
+  public constructor(vertex: string, degree: number) {
+    this.vertex = vertex
+    this.degree = degree
+  }
+}
 
-    subgraphs.push(keys[index])
-    processed.add(keys[index])
+/**
+ * Wraps a `RawAdjacencyMatrix` object
+ */
+export default class AdjacencyMatrix {
+  private _data    : RawAdjacencyMatrix
+  private _vertices: string[] | null = null
 
-    const queue = Queue.fromArray([keys[index]])
-    while (!queue.isEmpty()) {
-      const row = queue.dequeue()!
-
-      for (const col in matrix[row]) {
-        if (matrix[row][col] && !processed.has(col)) {
-          processed.add(col)
-          queue.enqueue(col)
-        }
+  /**
+   * Verifies if the provided vertices are in the adjacency matrix and throws if they aren't
+   * @throws
+   * @param vertices 
+   */
+  private verifyVertices(...vertices: string[]) {
+    for (const vertex of vertices) {
+      if (!(vertex in this._data)) {
+        throw new Error(`${vertex} is not a vertex in matrix`)
       }
     }
   }
 
-  for (let i = 1; i < subgraphs.length; ++i) {
-    result[subgraphs[0]][subgraphs[i]] = true
-    result[subgraphs[i]][subgraphs[0]] = true
+  /**
+   * Construct a new adjacency matrix with raw data
+   * @param data 
+   */
+  public constructor(data: RawAdjacencyMatrix) {
+    this._data = data
   }
 
-  return result
-}
+  /**
+   * Creates a new adjacency matrix from a list of vertices and edges
+   * @param vertices 
+   * @param edges 
+   * @returns 
+   */
+  public static fromVerticesAndEdges(vertices: string[], edges: Edge[]): AdjacencyMatrix {
+    const matrix: RawAdjacencyMatrix = {}
 
-/**
- * Generates an adjacency graph for n vertices.
- * @param nVertices number of vertices
- * @param density edge density
- */
-export const generateAdjacencyMatrix = (nVertices: number, density: number): AdjacencyMatrix => {
-  const matrix: AdjacencyMatrix = {}
+    vertices.forEach(vertexA => {
+      matrix[vertexA] = {}
+      vertices.forEach(vertexB => {
+        matrix[vertexA][vertexB] = false
+      })
+    })
 
-  for (let i = 0; i < nVertices; ++i) {
-    if (!matrix[i]) {
-      matrix[i] = {}
-    }
-    for (let j = 0; j <= i; ++j) {
-      if (j !== i && Math.random() < density) {
-        matrix[i][j] = true
+    edges.forEach(({ vertexA, vertexB }) => {
+      matrix[vertexA][vertexB] = true
+      matrix[vertexB][vertexA] = true
+    })
 
-        if (!matrix[j]) {
-          matrix[j] = {}
-        }
-        matrix[j][i] = true
+    return new AdjacencyMatrix(matrix)
+  }
+
+  /**
+   * Generates a random adjacency matrix
+   * @param vertices 
+   * @param density the probability of an edge to generate
+   * @returns 
+   */
+  public static generateRandom(vertices: number, density: number): AdjacencyMatrix {
+    const matrix: RawAdjacencyMatrix = {}
+
+    for (let i = 0; i < vertices; ++i) {
+      const vertexA = i.toString()
+
+      matrix[vertexA] = {}
+
+      for (let j = 0; j <= i; ++j) {
+        const vertexB  = j.toString()
+        const generate = (i !== j) && (Math.random() < density)
+
+        matrix[vertexA][vertexB] = generate
+        matrix[vertexB][vertexA] = generate
       }
-      else {
-        matrix[i][j] = matrix[j][i] = false
-      }
     }
+
+    return new AdjacencyMatrix(matrix)
   }
 
-  return matrix
-}
-
-/**
- * Creates a dot string from an adjacency matrix
- * @param matrix the matrix to generate a dot string for
- * @returns the resulting dot string
- */
-export const dotStringFromAdjacencyMatrix = (matrix: AdjacencyMatrix): string => {
-  const keys = Object.keys(matrix)
-
-  let result = 'graph {'
-
-  result += keys.map((row, index) => (
-    `"${row}";` + keys
-      .filter((col, i) => (i > index) && matrix[row][col])
-      .map(col => `"${row}" -- "${col}";`)
-      .join('')
-  )).join('')
-
-  result += '}'
-
-  return result
-}
-
-/**
- * Creates a dot string from an adjacency matrix
- * @param matrix the matrix to generate a dot string for
- * @returns the resulting dot string
- */
- export const dotStringFromAdjacencyMatrixWithCover = (matrix: AdjacencyMatrix, cover: Set<string>, theme: Theme): string => {
-  const keys = Object.keys(matrix)
-
-  let result = 'graph {'
-
-  result += keys.map((row, index) => (
-    `"${row}"[${cover.has(row) ?  `style=filled,fillcolor="${theme.palette.info.main}"` : ''}];` + keys
-      .filter((col, i) => (i > index) && matrix[row][col])
-      .map(col => `"${row}" -- "${col}";`)
-      .join('')
-  )).join('')
-
-  result += '}'
-
-  return result
-}
-
-const getHighlightColor = (degree: number, topDegree: number, theme: Theme): string => {
-  if (degree === 0) {
-    return theme.palette.error.main
-  }
-  if (degree === 1) {
-    return theme.palette.success.main
-  }
-  if (degree >= topDegree) {
-    return theme.palette.primary.dark
+  /**
+   * Gets the raw adjacency matrix
+   */
+  public get data(): RawAdjacencyMatrix {
+    return this._data
   }
 
-  return 'transparent'
-}
+  /**
+   * Makes a copy of the adjacency matrix
+   */
+  public clone(): AdjacencyMatrix {
+    return new AdjacencyMatrix(_.cloneDeep(this.data))
+  }
 
-export const highlightedDotStringFromAdjacencyMatrix = (matrix: AdjacencyMatrix, tops: number, theme: Theme): string => {
-  const keys = Object.keys(matrix)
-  const degrees = getAdjacencyMatrixDegreeMap(matrix)
-  const topDegree = tops
+  /**
+   * Gets the name of all the vertices
+   */
+  public get vertices(): string[] {
+    if (!this._vertices) {
+      this._vertices = Object.keys(this.data)
+    }
 
-  let result = 'graph {'
+    return this._vertices
+  }
 
-  result += keys.map((row, index) => {
-    const highlight = getHighlightColor(degrees[row], topDegree, theme)
-    return `"${row}"[style=filled,fillcolor="${highlight}"];` + keys
-      .filter((col, i) => (i > index) && matrix[row][col])
-      .map(col => `"${row}" -- "${col}"`)
-      .join(';')
-  }).join('')
+  /**
+   * Adds an edge to the adjacency matrix
+   * @throws if the edge is invalid
+   * @param edge 
+   */
+  public addEdge({ vertexA, vertexB }: Edge): this {
+    this.verifyVertices(vertexA, vertexB)
 
-  result += '}'
+    this.data[vertexA][vertexB] = true
+    this.data[vertexB][vertexA] = true
 
-  return result
-}
+    return this
+  }
 
-export type DegreeArray = Array<{ vertex: string, degrees: number }>
+  /**
+   * Removes an edge from the adjacency matrix
+   * @throws if the edge is invalid
+   * @param edge 
+   */
+  public removeEdge({ vertexA, vertexB }: Edge): this {
+    this.verifyVertices(vertexA, vertexB)
 
-/**
- * Gets the degree of every vertex
- * @param matrix 
- * @returns 
- */
-export const getAdjacencyMatrixDegrees = (matrix: AdjacencyMatrix): DegreeArray => {
-  return _.reduce<AdjacencyMatrix, DegreeArray>(matrix, (accumulator, connections, vertex) => {
-    accumulator.push({
-      vertex: vertex,
-      degrees: _.reduce(connections, (count, isConnected) => {
+    this.data[vertexA][vertexB] = false
+    this.data[vertexB][vertexA] = false
+
+    return this
+  }
+
+  /**
+   * Checks if an edge is present in the adjacency matrix
+   * @param edge 
+   * @returns 
+   */
+  public hasEdge({ vertexA, vertexB }: Edge): boolean {
+    return this.data[vertexA][vertexB] ?? false
+  }
+
+  /**
+   * Gets the degree for each vertex
+   */
+  public get degrees(): VertexDegree[] {
+    return _.reduce<RawAdjacencyMatrix, VertexDegree[]>(this.data, (accumulator, connections, vertex) => {
+      accumulator.push(
+        new VertexDegree(
+          vertex,
+          _.reduce(connections, (count, isConnected) => {
+            return count + (+isConnected)
+          }, 0)
+        )
+      )
+      return accumulator
+    }, [])
+  }
+
+  /**
+   * Gets the degree for each vertex in map form
+   */
+  public get degreesMap(): { [vertex: string]: number } {
+    return _.reduce<RawAdjacencyMatrix, { [vertex: string]: number }>(this.data, (accumulator, connections, vertex) => {
+      accumulator[vertex] = _.reduce(connections, (count, isConnected) => {
         return count + (+isConnected)
       }, 0)
-    })
-    return accumulator
-  }, [])
-}
-
-export type DegreeMap = { [vertex: string]: number }
-
-/**
- * Gets the degree of every vertex
- * @param matrix 
- * @returns 
- */
-export const getAdjacencyMatrixDegreeMap = (matrix: AdjacencyMatrix): DegreeMap => {
-  return _.reduce<AdjacencyMatrix, DegreeMap>(matrix, (accumulator, connections, vertex) => {
-    accumulator[vertex] = _.reduce(connections, (count, isConnected) => {
-      return count + (+isConnected)
-    }, 0)
-    return accumulator
-  }, {})
-}
-
-/**
- * Adds a pendant to an adjacency vertex
- * @param matrix 
- * @returns null if no pendant could be added
- */
-export const addPendantToAdjacencyMatrix = (matrix: AdjacencyMatrix, topsDegree: number): AdjacencyMatrix | null => {
-  const result = _.cloneDeep(matrix)
-  const degrees = getAdjacencyMatrixDegrees(matrix)
-    .sort(({ degrees: a }, { degrees: b }) => a - b)
-
-  const candidate = degrees.find(({ degrees }) => (degrees > 1) && (degrees < topsDegree))
-  if (!candidate) {
-    return null
+      return accumulator
+    }, {})
   }
 
-  let edgesRemaining = candidate.degrees
-  for (const neighbor in result[candidate.vertex]) {
-    if (result[candidate.vertex][neighbor]) {
-      edgesRemaining -= 1
-      result[candidate.vertex][neighbor] = false
-      result[neighbor][candidate.vertex] = false
+  public getNeighbors(vertex: string): string[] {
+    this.verifyVertices(vertex)
 
-      if (edgesRemaining === 1) {
-        break
-      }
-    }
-  }
-
-  return result
-}
-
-/**
- * Removes a pendant from the adjacency matrix and restores it if possible
- * @param matrix 
- * @param original 
- * @returns null if no pendant could be removed
- */
-export const removePendantFromAdjacencyMatrix = (matrix: AdjacencyMatrix, original: AdjacencyMatrix): AdjacencyMatrix | null => {
-  const result = _.cloneDeep(matrix)
-  const degrees = getAdjacencyMatrixDegrees(matrix)
-  const origDegrees = getAdjacencyMatrixDegrees(original)
-
-  const candidate = degrees.find(({ degrees: deg }, index) => (deg === 1) && (origDegrees[index].degrees !== deg))
-  if (!candidate) {
-    const pendant = degrees.find(({ degrees: deg }) => deg === 1)
-    if (!pendant) {
-      return null
-    }
-
-    for (const neighbor in matrix[pendant.vertex]) {
-      if (!result[pendant.vertex][neighbor] && pendant.vertex !== neighbor) {
-        result[pendant.vertex][neighbor] = true
-        result[neighbor][pendant.vertex] = true
-        break
-      }
-    }
+    const result: string[] = []
+    this.forEachEdgeOfVertex(vertex, ({ vertexB }) => result.push(vertexB))
     return result
   }
 
-  for (const neighbor in matrix[candidate.vertex]) {
-    result[candidate.vertex][neighbor] = original[candidate.vertex][neighbor]
-    result[neighbor][candidate.vertex] = original[neighbor][candidate.vertex]
+  /**
+   * Runs the callback for every edge connected to a given vertex
+   * @param vertex 
+   * @param callback 
+   */
+  public forEachEdgeOfVertex(vertex: string, callback: (edge: Edge) => void): void {
+    this.verifyVertices(vertex)
+
+    this.vertices.forEach((connection) => {
+      if (this.data[vertex][connection]) {
+        callback(new Edge(vertex, connection))
+      }
+    })
   }
 
-  return result
-}
-
-export const addTopToAdjacencyMatrix = (matrix: AdjacencyMatrix, topsDegree: number): AdjacencyMatrix | null => {
-  const result = _.cloneDeep(matrix)
-  const degrees = getAdjacencyMatrixDegrees(matrix)
-    .sort(({ degrees: a }, { degrees: b }) => b - a)
-
-  if (degrees.length < topsDegree) {
-    return null
+  /**
+   * Runs the callback for every edge in the matrix
+   * @param callback 
+   */
+  public forEachEdge(callback: (edge: Edge) => void): void {
+    for (let i = 0; i < this.vertices.length; ++i) {
+      for (let j = 0; j < i; ++j) {
+        const edge = new Edge(this.vertices[i], this.vertices[j])
+  
+        if (this.hasEdge(edge)) {
+          callback(edge)
+        }
+      }
+    }
+  }
+  
+  /**
+   * Maps all the edges in the matrix
+   * @param callback 
+   * @returns 
+   */
+  public mapEdges<T>(callback: (edge: Edge) => T): T[] {
+    let result: T[] = []
+    this.forEachEdge(edge => result.push(callback(edge)))
+    return result
   }
 
-  const candidate = degrees.find(({ degrees: deg }, index) => deg < topsDegree)
-  if (!candidate) { 
-    return null
+  /**
+   * Checks if all edges meet a condition
+   * @param callback 
+   * @returns 
+   */
+  public allEdges(callback: (edge: Edge) => boolean): boolean {
+    for (let i = 0; i < this.vertices.length; ++i) {
+      for (let j = 0; j < i; ++j) {
+        const edge = new Edge(this.vertices[i], this.vertices[j])
+  
+        if (this.hasEdge(edge) && !callback(edge)) {
+          return false
+        }
+      }
+    }
+    return true
   }
 
-  let currentDegree = candidate.degrees
-  for (const neighbor in matrix[candidate.vertex]) {
-    if (!result[candidate.vertex][neighbor] && candidate.vertex !== neighbor) {
-      result[candidate.vertex][neighbor] = true
-      result[neighbor][candidate.vertex] = true
+  /**
+   * Makes an existing vertex a pendant
+   * @param topsDegree 
+   * @returns null if failed
+   */
+  public addPendant(topsDegree: number): this | null {
+    const degrees = this.degrees.sort(({ degree: a }, { degree: b }) => a - b)
 
-      ++currentDegree
+    const candidate = degrees.find(({ degree }) => (degree > 1) && (degree < topsDegree))
+    if (!candidate) {
+      return null
+    }
+
+    let edgesRemaining = candidate.degree
+    for (const neighbor in this.data[candidate.vertex]) {
+      const edge = new Edge(candidate.vertex, neighbor)
+
+      if (this.hasEdge(edge)) {
+        this.removeEdge(edge)
+
+        edgesRemaining -= 1
+        if (edgesRemaining === 1) {
+          break
+        }
+      }
+    }
+
+    return this
+  }
+
+  /**
+   * Removes a pendant by adding edges and tries to restore it its old state
+   * @param original 
+   * @returns 
+   */
+  public removePendant(original: AdjacencyMatrix): this | null {
+    const degrees     = this.degrees
+    const origDegrees = original.degrees
+
+    let candidate = degrees.find(({ degree }, index) => (
+      (degree === 1) && (origDegrees[index].degree !== degree)
+    )) ?? degrees.find(({ degree }) => degree === 1)
+
+    if (!candidate) {
+      return null
+    }
+
+    // Try restoring previous edge
+    let addedEdge = false
+    for (const neighbor in this.data[candidate.vertex]) {
+      const edge = new Edge(candidate.vertex, neighbor)
+      if (!this.hasEdge(edge) && original.hasEdge(edge)) {
+        this.addEdge(edge)
+        addedEdge = true
+      }
+    }
+
+    if (!addedEdge) {
+      // Add arbitrary edge
+      for (const neighbor in this.data[candidate.vertex]) {
+        const edge = new Edge(candidate.vertex, neighbor)
+        if (!this.hasEdge(edge)) {
+          this.addEdge(edge)
+          addedEdge = true
+          break
+        }
+      }
+    }
+
+    return addedEdge ? this : null
+  }
+
+  /**
+   * Adds a top to the adjacency matrix
+   * @param topsDegree 
+   * @returns 
+   */
+  public addTop(topsDegree: number): this | null {
+    const degrees = this.degrees
+      .sort(({ degree: a }, { degree: b }) => b - a)
+
+    if (degrees.length < topsDegree) {
+      return null
+    }
+
+    const candidate = degrees.find(({ degree }) => degree < topsDegree)
+    if (!candidate) {
+      return null
+    }
+
+    let degree = candidate.degree
+    for (const neighbor in this.data[candidate.vertex]) {
+      const edge = new Edge(candidate.vertex, neighbor)
+      if (!this.hasEdge(edge) && candidate.vertex !== neighbor) {
+        this.addEdge(edge)
+        ++degree
+      }
+
+      if (degree === topsDegree) {
+        break
+      }
     }
     
-    if (currentDegree === topsDegree) {
-      break
-    }
+    return this
   }
 
-  return result
-}
+  /**
+   * Removes a top from the adjacency matrix and tries to restore it to its original state
+   * @param getStyleForVertex 
+   * @returns 
+   */
+  removeTop(original: AdjacencyMatrix, topsDegree: number): this | null {
+    const degrees     = this.degrees
+    const origDegrees = original.degrees
 
-export const removeTopFromAdjacency = (matrix: AdjacencyMatrix, original: AdjacencyMatrix, topsDegree: number): AdjacencyMatrix | null => {
-  const result = _.cloneDeep(matrix)
-  const degrees = getAdjacencyMatrixDegrees(matrix)
-  const origDegrees = getAdjacencyMatrixDegrees(original)
-
-  const candidate = degrees.find(({ degrees: deg }, index) => (deg >= topsDegree) && (origDegrees[index].degrees !== deg))
-  if (!candidate) {
-    const pendant = degrees.find(({ degrees: deg }) => deg >= topsDegree)
-    if (!pendant) {
+    const candidate = degrees.find(({ degree }, index) => (
+      (degree >= topsDegree) && (origDegrees[index].degree !== degree)
+    )) ?? degrees.find(({ degree }) => degree >= topsDegree)
+    if (!candidate) {
       return null
     }
 
-    for (const neighbor in matrix[pendant.vertex]) {
-      if (!result[pendant.vertex][neighbor] && pendant.vertex !== neighbor) {
-        result[pendant.vertex][neighbor] = false
-        result[neighbor][pendant.vertex] = false
+    // Try restoring previous edges
+    let degree = candidate.degree
+    for (const neighbor in this.data[candidate.vertex]) {
+      const edge = new Edge(candidate.vertex, neighbor)
+      if (!original.hasEdge(edge) && candidate.vertex !== neighbor) {
+        this.removeEdge(edge)
+        --degree
       }
     }
+
+    if (degree >= topsDegree) {
+      // Remove arbitrary edges
+      for (const neighbor in this.data[candidate.vertex]) {
+        const edge = new Edge(candidate.vertex, neighbor)
+        if (this.hasEdge(edge) && candidate.vertex !== neighbor) {
+          this.addEdge(edge)
+          ++degree
+        }
+
+        if (degree < topsDegree) {
+          break
+        }
+      }
+    }
+
+    return degree < topsDegree ? this : null
+  }
+
+  public makeConnected(): this {
+    const vertices            = this.vertices
+    const processed           = new Set<string>()
+    const subgraphs: string[] = []
+    let   prevIndex           = -1
+  
+    while (processed.size < vertices.length) {
+      const index = _.findIndex(vertices, key => !processed.has(key), prevIndex + 1)
+      prevIndex = index
+  
+      subgraphs.push(vertices[index])
+      processed.add(vertices[index])
+  
+      const queue = Queue.fromArray([vertices[index]])
+      while (!queue.isEmpty()) {
+        const row = queue.dequeue()!
+  
+        for (const col in this.data[row]) {
+          if (this.data[row][col] && !processed.has(col)) {
+            processed.add(col)
+            queue.enqueue(col)
+          }
+        }
+      }
+    }
+  
+    for (let i = 1; i < subgraphs.length; ++i) {
+      const edge = new Edge(subgraphs[0], subgraphs[i])
+      this.addEdge(edge)
+    }
+
+    return this
+  }
+
+  /**
+   * Creates a dot string that represents the adjacency matrix
+   * @param getStyleForVertex 
+   * @returns 
+   */
+  public generateDotString(getStyleForVertex?: (vertex: string) => Array<string> | undefined): string {
+    let result = 'graph {'
+
+    // Vertex definitions
+    result += this.vertices.map((vertex) => {
+      const style = getStyleForVertex && getStyleForVertex(vertex)
+      if (style) {
+        return `"${vertex}"[${style.join(',')}];`
+      }
+      else {
+        return `"${vertex}";`
+      }
+    }).join('')
+
+    // Edges
+    result += this.mapEdges(({ vertexA, vertexB }) => (
+      `"${vertexA}" -- "${vertexB}";`
+    )).join('')
+
+    result += '}'
+
     return result
   }
-
-  for (const neighbor in matrix[candidate.vertex]) {
-    result[candidate.vertex][neighbor] = original[candidate.vertex][neighbor]
-    result[neighbor][candidate.vertex] = original[neighbor][candidate.vertex]
-  }
-
-  return result
-}
-
-const getPendantNeighbor = (matrix: AdjacencyMatrix, pendant: string): string | null => {
-  return _.findKey(matrix[pendant], (connected) => connected) ?? null
-}
-
-const getUncoveredDegree = (matrix: AdjacencyMatrix, vertex: string, cover: Set<string>): number => {
-  if (cover.has(vertex)) {
-    return 0
-  }
-
-  return _.reduce(matrix[vertex], (accumulator, connected, connection) => {
-    return accumulator + ((connected && !cover.has(connection)) ? 1 : 0)
-  }, 0)
-}
-
-const isAdjacencyMatrixCovered = (matrix: AdjacencyMatrix, cover: Set<string>): boolean => {
-  const keys = Object.keys(matrix)
-
-  for (let i = 0; i < keys.length; ++i) {
-    for (let j = 0; j < i; ++j) {
-      const isEdge = matrix[keys[i]][keys[j]]
-
-      if (isEdge && !cover.has(keys[i]) && !cover.has(keys[j])) {
-        return false
-      }
-    }
-  }
-
-  return true
-}
-
-const countUncoveredEdges = (matrix: AdjacencyMatrix, cover: Set<string>): number => {
-  const keys = Object.keys(matrix)
-  let result = 0
-
-  for (let i = 0; i < keys.length; ++i) {
-    for (let j = 0; j < i; ++j) {
-      const isEdge = matrix[keys[i]][keys[j]]
-
-      if (isEdge && !cover.has(keys[i]) && !cover.has(keys[j])) {
-        result += 1
-      }
-    }
-  }
-
-  return result
-}
-
-type Edges = Map<string, { a: string, b: string }>
-
-const getEdges = (matrix: AdjacencyMatrix): Edges => {
-  const keys = Object.keys(matrix)
-  const result: Edges = new Map()
-
-  for (let i = 0; i < keys.length; ++i) {
-    for (let j = 0; j < i; ++j) {
-      const isEdge = matrix[keys[i]][keys[j]]
-
-      if (isEdge) {
-        result.set(`${keys[i]}-${keys[j]}`, {
-          a: keys[i],
-          b: keys[j]
-        })
-      }
-    }
-  }
-
-  return result
-}
-
-const factorial = (n: number): bigint => {
-  let result = 1n
-  for (let i = BigInt(n); i >= 1n; --i) {
-    result *= i
-  }
-  return result
-}
-
-const combinations = (n: number, r: number): number => {
-  let result = factorial(n) / (factorial(n - r) * factorial(r))
-  return +result.toString()
-}
-
-const getVertexCoverForAdjacencyMatrixInternal = (
-  matrix            : AdjacencyMatrix, 
-  k                 : number, 
-  progressCallback ?: (p: number) => void, 
-  keys              : string[] = Object.keys(matrix), 
-  cover             : Set<string> = new Set<string>(),
-  i                 : number = 0,
-  count             : number = 0,
-  totalCombinations : number = combinations(keys.length, k)
-): [Set<string> | null, number] => {
-
-  if (!(count % Math.round(totalCombinations / 100))) {
-    progressCallback && progressCallback(count / totalCombinations)
-  }
-
-  if (k === cover.size) {
-    return isAdjacencyMatrixCovered(matrix, cover) 
-      ? [cover, count + 1]
-      : [null, count + 1]
-  }
-
-  if ((cover.size + (keys.length - i) < k) || (k > keys.length)) {
-    return [null, count]
-  }
-
-  if (i >= keys.length) {
-    return [null, count + 1]
-  }
-
-  const newCover = new Set<string>(cover).add(keys[i])
-  const [a, c1] = getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, keys, newCover, i + 1, count, totalCombinations)
-  if (a !== null) {
-    return [a, c1]
-  }
-  
-  const [b, c2] = getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, keys, cover, i + 1, c1, totalCombinations)
-  if (b !== null) {
-    return [b, c2]
-  }
-
-  return [null, c2]
-}
-
-/**
- * Gets a vertex cover of `k` vertices for an adjacency matrix 
- * @param matrix the matrix to ge the cover for
- * @param k target number of vertices in the cover
- * @param progressCallback gets called with the current progress
- * @param cancellationToken allows the cancellation of the algorithm
- */
-export const getVertexCoverForAdjacencyMatrix = (  
-  matrix            : AdjacencyMatrix, 
-  k                 : number, 
-  progressCallback ?: (p: number) => void, 
-): Set<string> | null => {
-  return getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback)[0]
-}
-
-export const getVertexCoverForAdjacencyMatrixOptimized = (  
-  matrix            : AdjacencyMatrix, 
-  k                 : number, 
-  progressCallback ?: (p: number) => void, 
-): Set<string> | null => {
-  const keys = new Set<string>(Object.keys(matrix))
-  const cover = new Set<string>()
-
-  const degrees = getAdjacencyMatrixDegrees(matrix)
-    .sort(({ degrees: a }, { degrees: b }) => a - b)
-
-  let topsDegree = k
-  for (const { degrees: deg, vertex } of degrees) {
-    if (deg === 0) {
-      keys.delete(vertex)
-    }
-    else if (deg === 1 && !cover.has(vertex)) {
-      const neighbor = getPendantNeighbor(matrix, vertex)!
-      cover.add(neighbor)
-      keys.delete(neighbor)
-      keys.delete(vertex)
-
-      --topsDegree
-    }
-    else if (deg >= topsDegree && getUncoveredDegree(matrix, vertex, cover) >= topsDegree) {
-      cover.add(vertex)
-      keys.delete(vertex)
-      --topsDegree
-    }
-  }
-
-  if (countUncoveredEdges(matrix, cover) > (k ** 2)) {
-    return null
-  }
-
-  return getVertexCoverForAdjacencyMatrixInternal(matrix, k, progressCallback, [...keys], cover, undefined, undefined, combinations(keys.size, k - cover.size))[0]
-}
-
-const removeEdgesConnectedToVertex = (vertex: string, matrix: AdjacencyMatrix, edges: Edges) => {
-  _.forEach(matrix[vertex], (connected, to) => {
-    if (connected) {
-      edges.delete(`${vertex}-${to}`)
-      edges.delete(`${to}-${vertex}`)
-    }
-  })
-}
-
-/**
- * Approximates a vertex cover with the "take two" algorithm
- * @param matrix 
- * @param progressCallback 
- * @returns the approximated vertex cover
- */
-export const getVertexCoverTakeTwo = (matrix: AdjacencyMatrix, progressCallback?: (p: number) => void): Set<string> => {
-  const result = new Set<string>()
-  let edges = getEdges(matrix)
-  const startCount = edges.size
-  
-  let prevProgress = 0
-  while (edges.size) {
-    const [, edge] = edges.entries().next().value
-
-    removeEdgesConnectedToVertex(edge.a, matrix, edges)
-    removeEdgesConnectedToVertex(edge.b, matrix, edges)
-
-    let progress = 1 - (edges.size / startCount)
-    if ((progress - prevProgress) >= 0.01) {
-      progressCallback && progressCallback(progress)
-      prevProgress = progress
-    }
-
-    result.add(edge.a).add(edge.b)
-  }
-
-  return result
 }

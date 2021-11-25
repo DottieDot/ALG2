@@ -1,5 +1,5 @@
 
-import { generateAdjacencyMatrix } from '../../algorithm'
+import { AdjacencyMatrix } from '../../algorithm'
 import { GenerateAdjacencyMatrixWorkerIngoing, GENERATE_ADJACENCY_MATRIX_WORK_FINISHED, START_GENERATE_ADJACENCY_MATRIX_WORK } from './model'
 
 // @ts-ignore
@@ -10,7 +10,7 @@ ctx.onmessage = ({ data }: MessageEvent<GenerateAdjacencyMatrixWorkerIngoing>) =
     case START_GENERATE_ADJACENCY_MATRIX_WORK:
       postMessage({
         type: GENERATE_ADJACENCY_MATRIX_WORK_FINISHED,
-        adjacencyMatrix: generateAdjacencyMatrix(data.vertices, data.density)
+        adjacencyMatrix: AdjacencyMatrix.generateRandom(data.vertices, data.density).data
       })
       break
   }

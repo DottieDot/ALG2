@@ -1,7 +1,7 @@
 import { faSitemap } from '@fortawesome/free-solid-svg-icons'
 import { Box, Fade, InputAdornment, LinearProgress, TextField, Typography, useTheme } from '@mui/material'
 import { FunctionComponent, memo, useEffect, useState } from 'react'
-import { AdjacencyMatrix, dotStringFromAdjacencyMatrixWithCover } from '../../algorithm'
+import { AdjacencyMatrix, getDotStringForAdjacencyMatrixWithCover } from '../../algorithm'
 import { FontAwesomeIcon } from '../../components'
 import { VertexCoverWorker, START_VERTEX_COVER_WORK, VERTEX_COVER_FINISHED, VERTEX_COVER_PROGRESS_UPDATE } from '../../workers'
 import Graph from './Graph'
@@ -33,7 +33,7 @@ const VertexCover: FunctionComponent<Props> = ({ adjacencyMatrix, updateLayout }
         case VERTEX_COVER_FINISHED:
           setProgress(1)
           if (data.result) {
-            setDotString(dotStringFromAdjacencyMatrixWithCover(adjacencyMatrix, data.result, theme))
+            setDotString(getDotStringForAdjacencyMatrixWithCover(adjacencyMatrix, data.result, theme))
           }
           else {
             setDotString('')
@@ -44,7 +44,7 @@ const VertexCover: FunctionComponent<Props> = ({ adjacencyMatrix, updateLayout }
 
     worker.postMessage({
       type: START_VERTEX_COVER_WORK,
-      adjacencyMatrix,
+      adjacencyMatrix: adjacencyMatrix.data,
       verticesInCover: +k
     })
 

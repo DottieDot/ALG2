@@ -1,4 +1,4 @@
-import { AdjacencyMatrix } from '../../algorithm'
+import { RawAdjacencyMatrix } from '../../algorithm'
 
 export const START_VERTEX_COVER_WORK            = 'START_VERTEX_COVER_WORK'
 export const START_OPTIMIZED_VERTEX_COVER_WORK  = 'START_OPTIMIZED_VERTEX_COVER_WORK'
@@ -6,19 +6,19 @@ export const START_VERTEX_COVER_WORK_TAKE_TWO   = 'START_VERTEX_COVER_WORK_TAKE_
 
 export interface StartVertexCoverWork {
   type           : typeof START_VERTEX_COVER_WORK
-  adjacencyMatrix: AdjacencyMatrix
+  adjacencyMatrix: RawAdjacencyMatrix
   verticesInCover: number
 }
 
 export interface StartOptimizedCoverWork {
   type           : typeof START_OPTIMIZED_VERTEX_COVER_WORK
-  adjacencyMatrix: AdjacencyMatrix
+  adjacencyMatrix: RawAdjacencyMatrix
   verticesInCover: number
 }
 
 export interface StartVertexCoverWorkTakeTwo {
   type           : typeof START_VERTEX_COVER_WORK_TAKE_TWO
-  adjacencyMatrix: AdjacencyMatrix
+  adjacencyMatrix: RawAdjacencyMatrix
 }
 
 

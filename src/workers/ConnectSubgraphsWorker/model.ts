@@ -1,13 +1,13 @@
-import { AdjacencyMatrix } from '../../algorithm'
+import { RawAdjacencyMatrix } from '../../algorithm'
 
 export const START_CONNECT_SUBGRAPHS_WORK = 'START_CONNECT_SUBGRAPHS_WORK'
 
 export interface StartConnectSubgraphsWork {
   type           : typeof START_CONNECT_SUBGRAPHS_WORK
-  adjacencyMatrix: AdjacencyMatrix
+  adjacencyMatrix: RawAdjacencyMatrix
 }
 
-export const startConnectSubgraphsWork = (adjacencyMatrix: AdjacencyMatrix): StartConnectSubgraphsWork => ({
+export const startConnectSubgraphsWork = (adjacencyMatrix: RawAdjacencyMatrix): StartConnectSubgraphsWork => ({
   type: START_CONNECT_SUBGRAPHS_WORK,
   adjacencyMatrix
 })
@@ -18,7 +18,7 @@ export const CONNECT_SUBGRAPHS_WORK_FINISHED  = 'CONNECT_SUBGRAPHS_WORK_FINISHED
 
 export interface ConnectSubgraphsWorkFinished {
   type  : typeof CONNECT_SUBGRAPHS_WORK_FINISHED,
-  result: AdjacencyMatrix
+  result: RawAdjacencyMatrix
 }
 
 export type ConnectSubgraphsWorkerOutgoing = ConnectSubgraphsWorkFinished

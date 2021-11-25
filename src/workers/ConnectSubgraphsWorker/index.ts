@@ -17,11 +17,11 @@ export const connectSubgraphsAsync = (adjacencyMatrix: AdjacencyMatrix, cancella
 
     worker.onMessage = ({ data }) => {
       if (data.type === CONNECT_SUBGRAPHS_WORK_FINISHED) {
-        resolve(data.result)
+        resolve(new AdjacencyMatrix(data.result))
       }
     }
 
-    worker.postMessage(startConnectSubgraphsWork(adjacencyMatrix))
+    worker.postMessage(startConnectSubgraphsWork(adjacencyMatrix.data))
 
     cancellationToken?.onCancelled(() => {
       worker.terminate()

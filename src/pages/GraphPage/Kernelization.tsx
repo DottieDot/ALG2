@@ -1,7 +1,7 @@
 import { Add as PlusIcon, Remove as SubIcon, Restore as RestoreIcon } from '@mui/icons-material'
 import { Box, Button, Divider, Fade, LinearProgress, Paper, Stack, TextField, Typography, useTheme } from '@mui/material'
 import { FunctionComponent, memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { addPendantToAdjacencyMatrix, addTopToAdjacencyMatrix, AdjacencyMatrix, dotStringFromAdjacencyMatrixWithCover, highlightedDotStringFromAdjacencyMatrix, removePendantFromAdjacencyMatrix, removeTopFromAdjacency } from '../../algorithm'
+import { AdjacencyMatrix, getDotStringForAdjacencyMatrixWithCover, getDotStringForAdjacencyMatrixWithHighlighting } from '../../algorithm'
 import { START_OPTIMIZED_VERTEX_COVER_WORK, VertexCoverWorker, VERTEX_COVER_FINISHED, VERTEX_COVER_PROGRESS_UPDATE } from '../../workers'
 import Graph from './Graph'
 
@@ -14,7 +14,7 @@ const Kernelization: FunctionComponent<Props> = ({ adjacencyMatrix: origMatrix, 
   const theme = useTheme()
   const [adjacencyMatrix, setAdjacencyMatrix] = useState(origMatrix)
   const [k, setK] = useState(0)
-  const dotString = useMemo(() => highlightedDotStringFromAdjacencyMatrix(adjacencyMatrix, k, theme), [adjacencyMatrix, k, theme])
+  const dotString = useMemo(() => getDotStringForAdjacencyMatrixWithHighlighting(adjacencyMatrix, k, theme), [adjacencyMatrix, k, theme])
   const [progress, setProgress] = useState(0)
   const [coverDotString, setCoverDotString] = useState<string | null>(null)
 
@@ -27,19 +27,19 @@ const Kernelization: FunctionComponent<Props> = ({ adjacencyMatrix: origMatrix, 
   }, [updateLayout, adjacencyMatrix, coverDotString])
 
   const addPendant = useCallback(() => {
-    setAdjacencyMatrix(addPendantToAdjacencyMatrix(adjacencyMatrix, k) ?? adjacencyMatrix)
+    setAdjacencyMatrix(adjacencyMatrix.clone().addPendant(k) ?? adjacencyMatrix)
   }, [adjacencyMatrix, setAdjacencyMatrix, k])
 
   const removePendant = useCallback(() => {
-    setAdjacencyMatrix(removePendantFromAdjacencyMatrix(adjacencyMatrix, origMatrix) ?? adjacencyMatrix)
+    setAdjacencyMatrix(adjacencyMatrix.clone().removePendant(origMatrix) ?? adjacencyMatrix)
   }, [adjacencyMatrix, setAdjacencyMatrix, origMatrix])
 
   const addTop = useCallback(() => {
-    setAdjacencyMatrix(addTopToAdjacencyMatrix(adjacencyMatrix, k) ?? adjacencyMatrix)
+    setAdjacencyMatrix(adjacencyMatrix.clone().addPendant(k) ?? adjacencyMatrix)
   }, [adjacencyMatrix, setAdjacencyMatrix, k])
 
   const removeTop = useCallback(() => {
-    setAdjacencyMatrix(removeTopFromAdjacency(adjacencyMatrix, origMatrix, k) ?? adjacencyMatrix)
+    setAdjacencyMatrix(adjacencyMatrix.clone().removeTop(origMatrix, k) ?? adjacencyMatrix)
   }, [setAdjacencyMatrix, adjacencyMatrix, origMatrix, k])
 
   const restore = useCallback(() => {
@@ -62,7 +62,7 @@ const Kernelization: FunctionComponent<Props> = ({ adjacencyMatrix: origMatrix, 
         case VERTEX_COVER_FINISHED:
           setProgress(1)
           if (data.result) {
-            setCoverDotString(dotStringFromAdjacencyMatrixWithCover(adjacencyMatrix, data.result, theme))
+            setCoverDotString(getDotStringForAdjacencyMatrixWithCover(adjacencyMatrix, data.result, theme))
           }
           else {
             setCoverDotString('')
@@ -73,7 +73,7 @@ const Kernelization: FunctionComponent<Props> = ({ adjacencyMatrix: origMatrix, 
 
     worker.postMessage({
       type: START_OPTIMIZED_VERTEX_COVER_WORK,
-      adjacencyMatrix,
+      adjacencyMatrix: adjacencyMatrix.data,
       verticesInCover: +k
     })
 

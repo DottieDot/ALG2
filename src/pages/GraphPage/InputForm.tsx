@@ -74,7 +74,7 @@ const InputForm: FunctionComponent<Props> = ({ setAdjacencyMatrix }) => {
           ))
           worker.onMessage = (({ data }) => {
             if (data.type === GENERATE_ADJACENCY_MATRIX_WORK_FINISHED) {
-              setAdjacencyMatrix(data.adjacencyMatrix)
+              setAdjacencyMatrix(new AdjacencyMatrix(data.adjacencyMatrix))
               setSubmitting(false)
             }
           })

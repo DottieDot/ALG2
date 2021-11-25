@@ -1,6 +1,6 @@
 import { Box, Fade, LinearProgress, useTheme } from '@mui/material'
 import { FunctionComponent, memo, useEffect, useState } from 'react'
-import { AdjacencyMatrix, dotStringFromAdjacencyMatrixWithCover } from '../../algorithm'
+import { AdjacencyMatrix, getDotStringForAdjacencyMatrixWithCover } from '../../algorithm'
 import { START_VERTEX_COVER_WORK_TAKE_TWO, VertexCoverWorker, VERTEX_COVER_FINISHED, VERTEX_COVER_PROGRESS_UPDATE } from '../../workers'
 import Graph from './Graph'
 
@@ -25,14 +25,14 @@ const VertexCoverTakeTwo: FunctionComponent<Props> = ({ adjacencyMatrix, updateL
           break
         case VERTEX_COVER_FINISHED:
           setProgress(1)
-          setDotString(dotStringFromAdjacencyMatrixWithCover(adjacencyMatrix, data.result!, theme))
+          setDotString(getDotStringForAdjacencyMatrixWithCover(adjacencyMatrix, data.result!, theme))
           break
       }
     }
 
     worker.postMessage({
       type: START_VERTEX_COVER_WORK_TAKE_TWO,
-      adjacencyMatrix,
+      adjacencyMatrix: adjacencyMatrix.data,
     })
 
     return () => {
