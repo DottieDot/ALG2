@@ -147,6 +147,15 @@ export default class AdjacencyMatrix {
   }
 
   /**
+   * Gets all the edges
+   */
+  public get edges(): Edge[] {
+    const result: Edge[] = []
+    this.forEachEdge(e => result.push(e))
+    return result
+  }
+
+  /**
    * Adds an edge to the adjacency matrix
    * @throws if the edge is invalid
    * @param edge 

@@ -1,7 +1,8 @@
 import { Box, Fade, LinearProgress, useTheme } from '@mui/material'
+import CancellationToken from 'cancellationtoken'
 import { FunctionComponent, memo, useEffect, useState } from 'react'
 import { AdjacencyMatrix, getDotStringForAdjacencyMatrixWithCover } from '../../algorithm'
-import { START_VERTEX_COVER_WORK_TAKE_TWO, VertexCoverWorker, VERTEX_COVER_FINISHED, VERTEX_COVER_PROGRESS_UPDATE } from '../../workers'
+import { takeTwoVertexCoverAsync } from '../../workers'
 import Graph from './Graph'
 
 interface Props {
@@ -15,28 +16,14 @@ const VertexCoverTakeTwo: FunctionComponent<Props> = ({ adjacencyMatrix, updateL
   const [dotString, setDotString] = useState<string | null>(null)
 
   useEffect(() => {
-    const worker = new VertexCoverWorker()
+    const { token, cancel } = CancellationToken.create()
 
-    setProgress(0)
-    worker.onMessage = ({ data }) => {
-      switch (data.type) {
-        case VERTEX_COVER_PROGRESS_UPDATE:
-          setProgress(data.progress)
-          break
-        case VERTEX_COVER_FINISHED:
-          setProgress(1)
-          setDotString(getDotStringForAdjacencyMatrixWithCover(adjacencyMatrix, data.result!, theme))
-          break
-      }
-    }
-
-    worker.postMessage({
-      type: START_VERTEX_COVER_WORK_TAKE_TWO,
-      adjacencyMatrix: adjacencyMatrix.data,
-    })
+    takeTwoVertexCoverAsync(adjacencyMatrix, setProgress, token)
+      .then(cover => getDotStringForAdjacencyMatrixWithCover(adjacencyMatrix, cover, theme))
+      .then(setDotString)
 
     return () => {
-      worker.terminate()
+      cancel()
     }
   }, [adjacencyMatrix, setProgress, setDotString, theme])
 

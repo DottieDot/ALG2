@@ -1,9 +1,10 @@
 import { faSitemap } from '@fortawesome/free-solid-svg-icons'
 import { Box, Fade, InputAdornment, LinearProgress, TextField, Typography, useTheme } from '@mui/material'
+import CancellationToken from 'cancellationtoken'
 import { FunctionComponent, memo, useEffect, useState } from 'react'
 import { AdjacencyMatrix, getDotStringForAdjacencyMatrixWithCover } from '../../algorithm'
 import { FontAwesomeIcon } from '../../components'
-import { VertexCoverWorker, START_VERTEX_COVER_WORK, VERTEX_COVER_FINISHED, VERTEX_COVER_PROGRESS_UPDATE } from '../../workers'
+import { getVertexCoverAsync } from '../../workers'
 import Graph from './Graph'
 
 interface Props {
@@ -18,38 +19,14 @@ const VertexCover: FunctionComponent<Props> = ({ adjacencyMatrix, updateLayout }
   const [k, setK] = useState('')
 
   useEffect(() => {
-    if (Number.isNaN(+k)) {
-      return
-    }
+    const { token, cancel } = CancellationToken.create()
 
-    const worker = new VertexCoverWorker()
-
-    setProgress(0)
-    worker.onMessage = ({ data }) => {
-      switch (data.type) {
-        case VERTEX_COVER_PROGRESS_UPDATE:
-          setProgress(data.progress)
-          break
-        case VERTEX_COVER_FINISHED:
-          setProgress(1)
-          if (data.result) {
-            setDotString(getDotStringForAdjacencyMatrixWithCover(adjacencyMatrix, data.result, theme))
-          }
-          else {
-            setDotString('')
-          }
-          break
-      }
-    }
-
-    worker.postMessage({
-      type: START_VERTEX_COVER_WORK,
-      adjacencyMatrix: adjacencyMatrix.data,
-      verticesInCover: +k
-    })
+    getVertexCoverAsync(adjacencyMatrix, +k, setProgress, token)
+      .then(cover => cover ? getDotStringForAdjacencyMatrixWithCover(adjacencyMatrix, cover, theme) : '')
+      .then(setDotString)
 
     return () => {
-      worker.terminate()
+      cancel()
     }
   }, [adjacencyMatrix, setProgress, setDotString, k, theme])
 

@@ -1,8 +1,9 @@
 import { Add as PlusIcon, Remove as SubIcon, Restore as RestoreIcon } from '@mui/icons-material'
 import { Box, Button, Divider, Fade, LinearProgress, Paper, Stack, TextField, Typography, useTheme } from '@mui/material'
+import CancellationToken from 'cancellationtoken'
 import { FunctionComponent, memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { AdjacencyMatrix, getDotStringForAdjacencyMatrixWithCover, getDotStringForAdjacencyMatrixWithHighlighting } from '../../algorithm'
-import { START_OPTIMIZED_VERTEX_COVER_WORK, VertexCoverWorker, VERTEX_COVER_FINISHED, VERTEX_COVER_PROGRESS_UPDATE } from '../../workers'
+import { getVertexCoverKernelizedAsync } from '../../workers'
 import Graph from './Graph'
 
 interface Props {
@@ -47,38 +48,14 @@ const Kernelization: FunctionComponent<Props> = ({ adjacencyMatrix: origMatrix, 
   }, [setAdjacencyMatrix, origMatrix])
 
   useEffect(() => {
-    if (Number.isNaN(+k)) {
-      return
-    }
+    const { token, cancel } = CancellationToken.create()
 
-    const worker = new VertexCoverWorker()
-
-    setProgress(0)
-    worker.onMessage = ({ data }) => {
-      switch (data.type) {
-        case VERTEX_COVER_PROGRESS_UPDATE:
-          setProgress(data.progress)
-          break
-        case VERTEX_COVER_FINISHED:
-          setProgress(1)
-          if (data.result) {
-            setCoverDotString(getDotStringForAdjacencyMatrixWithCover(adjacencyMatrix, data.result, theme))
-          }
-          else {
-            setCoverDotString('')
-          }
-          break
-      }
-    }
-
-    worker.postMessage({
-      type: START_OPTIMIZED_VERTEX_COVER_WORK,
-      adjacencyMatrix: adjacencyMatrix.data,
-      verticesInCover: +k
-    })
+    getVertexCoverKernelizedAsync(adjacencyMatrix, +k, setProgress, token)
+      .then(cover => cover ? getDotStringForAdjacencyMatrixWithCover(adjacencyMatrix, cover, theme) : '')
+      .then(setCoverDotString)
 
     return () => {
-      worker.terminate()
+      cancel()
     }
   }, [adjacencyMatrix, setProgress, setCoverDotString, k, theme])
 
